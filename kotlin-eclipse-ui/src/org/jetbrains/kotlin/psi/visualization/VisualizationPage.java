@@ -21,8 +21,11 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.jetbrains.kotlin.parser.KotlinParser;
+import org.jetbrains.kotlin.utils.LineEndUtil;
 
 import com.intellij.lang.ASTNode;
+import com.intellij.openapi.util.TextRange;
+import com.intellij.openapi.util.text.StringUtil;
 
 public final class VisualizationPage extends Dialog {
 
@@ -39,7 +42,7 @@ public final class VisualizationPage extends Dialog {
             throw new IllegalArgumentException();
         }
         
-        this.sourceCode = sourceCode;
+        this.sourceCode = StringUtil.convertLineSeparators(sourceCode);
         this.file = file;
     }
     
@@ -73,8 +76,11 @@ public final class VisualizationPage extends Dialog {
             public void doubleClick(DoubleClickEvent event) {
                 IStructuredSelection thisSelection = (IStructuredSelection) event.getSelection();
                 ASTNode selectedNode = (ASTNode) thisSelection.getFirstElement();
-                programText.setSelection(selectedNode.getTextRange().getStartOffset(), 
-                        selectedNode.getTextRange().getEndOffset());
+                TextRange selectedNodeRange = selectedNode.getTextRange();
+                int start = LineEndUtil.convertLfToCrLfOffset(sourceCode, selectedNodeRange.getStartOffset());
+                int end = LineEndUtil.convertLfToCrLfOffset(sourceCode, selectedNodeRange.getEndOffset());
+                
+                programText.setSelection(start, end);
                 programText.showSelection();
             }
         });
