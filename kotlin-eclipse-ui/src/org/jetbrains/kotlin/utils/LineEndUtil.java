@@ -1,12 +1,19 @@
 package org.jetbrains.kotlin.utils;
 
 public class LineEndUtil {
-    public static int convertLfToCrLfOffset(String lfText, int lfOffset) {
+    public static int convertLfToOsOffset(String lfText, int lfOffset) {
+        String osLineSeparator = System.lineSeparator();
+        if (osLineSeparator.length() == 1) {
+            return lfOffset;
+        }
+        
+        assert osLineSeparator.equals("\r\n") : "Only \r\n is expected as multi char line separator";
+        
         // In CrLf move to new line takes 2 char instead of 1 in Lf
         return lfOffset + offsetToLineNumber(lfText, lfOffset);
     }
 
-    public static int offsetToLineNumber(String lfText, int offset) {
+    private static int offsetToLineNumber(String lfText, int offset) {
         int line = 0;
         int curOffset = 0;
         

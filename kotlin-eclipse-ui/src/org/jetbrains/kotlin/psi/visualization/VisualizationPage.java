@@ -25,7 +25,6 @@ import org.jetbrains.kotlin.utils.LineEndUtil;
 
 import com.intellij.lang.ASTNode;
 import com.intellij.openapi.util.TextRange;
-import com.intellij.openapi.util.text.StringUtil;
 
 public final class VisualizationPage extends Dialog {
 
@@ -42,7 +41,7 @@ public final class VisualizationPage extends Dialog {
             throw new IllegalArgumentException();
         }
         
-        this.sourceCode = StringUtil.convertLineSeparators(sourceCode);
+        this.sourceCode = sourceCode;
         this.file = file;
     }
     
@@ -68,17 +67,20 @@ public final class VisualizationPage extends Dialog {
         psiTreeViewer.setLabelProvider(new LabelProvider());
         
         KotlinParser parser = new KotlinParser(file);
-        psiTreeViewer.setInput(parser.parse());
+        ASTNode parsedAst = parser.parse();
+        psiTreeViewer.setInput(parsedAst);
         
-        psiTreeViewer.addDoubleClickListener(new IDoubleClickListener() {
-            
+        final String parsedText = parsedAst.getText();
+        
+        psiTreeViewer.addDoubleClickListener(new IDoubleClickListener() {            
             @Override
             public void doubleClick(DoubleClickEvent event) {
                 IStructuredSelection thisSelection = (IStructuredSelection) event.getSelection();
                 ASTNode selectedNode = (ASTNode) thisSelection.getFirstElement();
                 TextRange selectedNodeRange = selectedNode.getTextRange();
-                int start = LineEndUtil.convertLfToCrLfOffset(sourceCode, selectedNodeRange.getStartOffset());
-                int end = LineEndUtil.convertLfToCrLfOffset(sourceCode, selectedNodeRange.getEndOffset());
+                
+                int start = LineEndUtil.convertLfToOsOffset(parsedText, selectedNodeRange.getStartOffset());
+                int end = LineEndUtil.convertLfToOsOffset(parsedText, selectedNodeRange.getEndOffset());
                 
                 programText.setSelection(start, end);
                 programText.showSelection();
