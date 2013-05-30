@@ -39,9 +39,6 @@ public class KotlinEditor extends TextEditor {
             
             annotationUpdater = AnnotationUpdater.INSTANCE;
             
-            AnalyzerScheduler.INSTANCE.addFile(ResourceUtil.getFile(this.getEditorInput()), this);
-            AnalyzerScheduler.INSTANCE.schedule();
-            
             getWorkspace().addResourceChangeListener(annotationUpdater, IResourceChangeEvent.POST_CHANGE);
         }
     }
