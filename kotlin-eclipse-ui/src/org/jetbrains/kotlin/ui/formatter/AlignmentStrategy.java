@@ -47,9 +47,8 @@ public class AlignmentStrategy {
         return document;
     }
     
-    private void buildFormattedCode(ASTNode node, int curIndent) {
-        System.out.println("Indent: " + curIndent);
-        System.out.println("Text: " + node.toString());
+    private void buildFormattedCode(ASTNode node, int indent) {
+        indent = updateIndent(node, indent);
         for (ASTNode child : node.getChildren(null)) {
             PsiElement psiElement = child.getPsi();
             
@@ -58,13 +57,12 @@ public class AlignmentStrategy {
                 
                 if (elementType == JetTokens.WHITE_SPACE && child.getText().contains("\n")) {
                     int occur = child.getText().length() - child.getText().replace("\n", "").length();
-                    edit.addChild(new InsertEdit(0, createLevelingString(curIndent, occur)));
+                    edit.addChild(new InsertEdit(0, createLevelingString(indent, occur)));
                 } else {
                     edit.addChild(new InsertEdit(0, child.getText()));
                 }
             }
-            curIndent = updateIndent(node);
-            buildFormattedCode(child, curIndent);
+            buildFormattedCode(child, indent);
         }
     }
     
@@ -80,16 +78,11 @@ public class AlignmentStrategy {
         return stringBuilder.toString();
     }
     
-    private int updateIndent(ASTNode node) {
-        ASTNode parent = node.getTreeParent();
-        int depth = 0;
-        while (parent != null) {
-            if (blockElementTypes.contains(parent.getElementType().toString())) {
-                depth++;
-            }
-            parent = parent.getTreeParent();
-        }
+    private int updateIndent(ASTNode node, int curIndent) {
+        if (blockElementTypes.contains(node.getElementType().toString())) {
+            return curIndent + defaultIndent;
+        } 
         
-        return depth * defaultIndent;
+        return curIndent;
     }
 }
