@@ -1,13 +1,18 @@
 package org.jetbrains.kotlin.ui.editors;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
-import org.eclipse.core.resources.IFile;
-import org.eclipse.ui.IFileEditorInput;
 import org.eclipse.ui.handlers.HandlerUtil;
-import org.jetbrains.kotlin.core.builder.KotlinManager;
+import org.jetbrains.kotlin.parser.KotlinParser;
 import org.jetbrains.kotlin.ui.formatter.AlignmentStrategy;
+
+import com.intellij.lang.ASTNode;
 
 public class KotlinCodeFormatter extends AbstractHandler {
     
@@ -15,10 +20,29 @@ public class KotlinCodeFormatter extends AbstractHandler {
     public Object execute(ExecutionEvent event) throws ExecutionException {
         
         KotlinEditor editor = (KotlinEditor) HandlerUtil.getActiveEditor(event);
-        IFile iFile = ((IFileEditorInput) editor.getEditorInput()).getFile();
+        String sourceCode = editor.getDocumentProvider().getDocument(HandlerUtil.getActiveEditorInput(event)).get(); 
+        
+        ASTNode parsedFile = null;
+        try {
+            File tempFile = File.createTempFile("temp", ".kt");
+            
+            BufferedWriter bw = new BufferedWriter(new FileWriter(tempFile));
+            bw.write(sourceCode);
+            bw.close();
+            
+            parsedFile = new KotlinParser(tempFile).parse();
+            
+            tempFile.delete();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        
+        if (parsedFile == null) {
+            return null;
+        }
         
         editor.getDocumentProvider().getDocument(HandlerUtil.getActiveEditorInput(event)).set(
-                AlignmentStrategy.alignCode(KotlinManager.getParsedFile(iFile)));
+                AlignmentStrategy.alignCode(parsedFile));
         
         return null;
     }
