@@ -22,9 +22,11 @@ public class AlignmentStrategy {
     private final int defaultIndent = 4;
     
     private final ASTNode parsedFile;
-    private MultiTextEdit edit = new MultiTextEdit();
+    private MultiTextEdit edit;
     
     private static final Set<String> blockElementTypes;
+    private static final String lineSeparator = "\n";
+    private static final char spaceSeparator = ' ';
     
     static {
         blockElementTypes = new HashSet<String>(Arrays.asList("IF", "FOR", "WHILE", "FUN", "CLASS", "FUNCTION_LITERAL_EXPRESSION", "PROPERTY"));
@@ -52,17 +54,52 @@ public class AlignmentStrategy {
         for (ASTNode child : node.getChildren(null)) {
             PsiElement psiElement = child.getPsi();
             
-            if (psiElement != null && psiElement instanceof LeafPsiElement) {
-                IElementType elementType = ((LeafPsiElement) psiElement).getElementType();
-                
-                if (elementType == JetTokens.WHITE_SPACE && child.getText().contains("\n")) {
-                    int occur = child.getText().length() - child.getText().replace("\n", "").length();
-                    edit.addChild(new InsertEdit(0, createLevelingString(indent, occur)));
+            if (psiElement instanceof LeafPsiElement) {
+                if (isNewLine((LeafPsiElement) psiElement)) {
+                    int occur = getLineSeparatorsOccurences(psiElement.getText());
+                    
+                    int shift = indent;
+                    if (isBrace(psiElement.getNextSibling())) {
+                        shift -= defaultIndent;
+                    }
+                    
+                    edit.addChild(new InsertEdit(0, createLevelingString(shift, occur)));
                 } else {
-                    edit.addChild(new InsertEdit(0, child.getText()));
+                    edit.addChild(new InsertEdit(0, psiElement.getText()));
                 }
             }
             buildFormattedCode(child, indent);
+        }
+    }
+    
+    private boolean isNewLine(LeafPsiElement psiElement) {
+        return psiElement.getElementType() == JetTokens.WHITE_SPACE && psiElement.getText().contains(lineSeparator);
+    }
+    
+    private int getLineSeparatorsOccurences(String text) {
+        return text.length() - text.replace(lineSeparator, "").length();
+    }
+    
+    private boolean isBrace(PsiElement psiElement) {
+        LeafPsiElement leafPsiElement = getFirstLeaf(psiElement);
+        if (leafPsiElement != null) {
+            IElementType elementType = leafPsiElement.getElementType();
+            if (elementType == JetTokens.LBRACE || elementType == JetTokens.RBRACE) {
+                return true;
+            }
+        }
+        
+        return false;   
+    }
+    
+    private LeafPsiElement getFirstLeaf(PsiElement psiElement) {
+        PsiElement child = psiElement;
+        while (true) {
+            if (child instanceof LeafPsiElement || child == null) {
+                return (LeafPsiElement) child;
+            }
+            
+            child = child.getFirstChild();
         }
     }
     
@@ -72,7 +109,7 @@ public class AlignmentStrategy {
             stringBuilder.append(System.lineSeparator());
         }
         for (int i = 0; i < curIndent; ++i) {
-            stringBuilder.append(" ");
+            stringBuilder.append(spaceSeparator);
         }
 
         return stringBuilder.toString();
