@@ -4,12 +4,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.Document;
-import org.eclipse.jface.text.IDocument;
-import org.eclipse.text.edits.InsertEdit;
-import org.eclipse.text.edits.MalformedTreeException;
-import org.eclipse.text.edits.MultiTextEdit;
+import org.eclipse.ui.editors.text.EditorsUI;
+import org.eclipse.ui.texteditor.AbstractDecoratedTextEditorPreferenceConstants;
 import org.jetbrains.jet.lexer.JetTokens;
 
 import com.intellij.lang.ASTNode;
@@ -19,34 +15,36 @@ import com.intellij.psi.tree.IElementType;
 
 public class AlignmentStrategy {
     
-    private final int defaultIndent = 4;
+    private final int defaultIndent;
+    private final boolean spacesForTabs;
     
     private final ASTNode parsedFile;
-    private MultiTextEdit edit;
+    private StringBuilder edit;
     
     private static final Set<String> blockElementTypes;
     private static final String lineSeparator = "\n";
     private static final char spaceSeparator = ' ';
     
     static {
-        blockElementTypes = new HashSet<String>(Arrays.asList("IF", "FOR", "WHILE", "FUN", "CLASS", "FUNCTION_LITERAL_EXPRESSION", "PROPERTY"));
+        blockElementTypes = new HashSet<String>(Arrays.asList("IF", "FOR", "WHILE", "FUN", "CLASS", "FUNCTION_LITERAL_EXPRESSION", "PROPERTY", "WHEN"));
     }
     
     public AlignmentStrategy(ASTNode parsedFile) {
         this.parsedFile = parsedFile;
+        
+        defaultIndent = EditorsUI.getPreferenceStore().getInt(AbstractDecoratedTextEditorPreferenceConstants.EDITOR_TAB_WIDTH);
+        spacesForTabs = EditorsUI.getPreferenceStore().getBoolean(AbstractDecoratedTextEditorPreferenceConstants.EDITOR_SPACES_FOR_TABS);
     }
     
-    public IDocument placeSpaces() {
-        IDocument document = new Document();
-        edit = new MultiTextEdit();
+    public String placeSpaces() {
+        edit = new StringBuilder();
         buildFormattedCode(parsedFile, 0);
-        try {
-            edit.apply(document);
-        } catch (MalformedTreeException | BadLocationException e) {
-            e.printStackTrace();
-        }
         
-        return document;
+        return edit.toString();
+    }
+    
+    public static String alignCode(ASTNode parsedFile) {
+        return new AlignmentStrategy(parsedFile).placeSpaces();
     }
     
     private void buildFormattedCode(ASTNode node, int indent) {
@@ -60,12 +58,12 @@ public class AlignmentStrategy {
                     
                     int shift = indent;
                     if (isBrace(psiElement.getNextSibling())) {
-                        shift -= defaultIndent;
+                        shift--;
                     }
                     
-                    edit.addChild(new InsertEdit(0, createLevelingString(shift, occur)));
+                    edit.append(createLevelingString(shift, occur));
                 } else {
-                    edit.addChild(new InsertEdit(0, psiElement.getText()));
+                    edit.append(psiElement.getText());
                 }
             }
             buildFormattedCode(child, indent);
@@ -77,7 +75,14 @@ public class AlignmentStrategy {
     }
     
     private int getLineSeparatorsOccurences(String text) {
-        return text.length() - text.replace(lineSeparator, "").length();
+        int count = 0;
+        for (int i = 0; i < text.length(); ++i) {
+            if (text.charAt(i) == lineSeparator.charAt(0)) {
+                count++;
+            }
+        }
+        
+        return count;
     }
     
     private boolean isBrace(PsiElement psiElement) {
@@ -98,18 +103,24 @@ public class AlignmentStrategy {
             if (child instanceof LeafPsiElement || child == null) {
                 return (LeafPsiElement) child;
             }
-            
             child = child.getFirstChild();
         }
     }
-    
+
     private String createLevelingString(int curIndent, int countBreakLines) {
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < countBreakLines; ++i) {
             stringBuilder.append(System.lineSeparator());
         }
+        
         for (int i = 0; i < curIndent; ++i) {
-            stringBuilder.append(spaceSeparator);
+            if (spacesForTabs) {
+                for (int j = 0; j < defaultIndent; ++j) {
+                    stringBuilder.append(spaceSeparator);
+                }
+            } else {
+                stringBuilder.append("\t");
+            }
         }
 
         return stringBuilder.toString();
@@ -117,7 +128,7 @@ public class AlignmentStrategy {
     
     private int updateIndent(ASTNode node, int curIndent) {
         if (blockElementTypes.contains(node.getElementType().toString())) {
-            return curIndent + defaultIndent;
+            return curIndent + 1;
         } 
         
         return curIndent;
