@@ -13,6 +13,7 @@ public class LaunchConfigurationTabGroup extends AbstractLaunchConfigurationTabG
     @Override
     public void createTabs(ILaunchConfigurationDialog dialog, String mode) {
         ILaunchConfigurationTab[] tabs = new ILaunchConfigurationTab[] {
+                new KotlinMainLauncherTab(),
                 new JavaArgumentsTab(),
                 new JavaJRETab(),
                 new JavaClasspathTab(),
