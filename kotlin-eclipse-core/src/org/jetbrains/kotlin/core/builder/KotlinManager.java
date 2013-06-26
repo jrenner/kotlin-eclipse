@@ -60,6 +60,10 @@ public class KotlinManager {
         }
     }
     
+    public static ASTNode getParsedFile(IFile file) {
+        return psiFiles.get(file);
+    }
+    
     public static void updateProjectPsiSources(IResource resource, int flag) {
         updateProjectPsiSources(resource.getProject(), (IFile) resource, flag);
     }
