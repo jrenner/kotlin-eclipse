@@ -32,7 +32,7 @@ public class LaunchConfigurationDelegate extends AbstractJavaLaunchConfiguration
         try {
             Path path = new Path(FileLocator.resolve(FileLocator.find(bundle, iconPath, null)).getPath());
             
-            ktHome = path.removeLastSegments(3).toPortableString() + "kotlin-bundled-compiler/";
+            ktHome = path.removeLastSegments(3).toPortableString() + "/kotlin-bundled-compiler/";
         } catch (IOException e) {
         }
     }
