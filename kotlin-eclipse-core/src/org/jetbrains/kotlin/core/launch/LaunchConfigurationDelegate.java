@@ -2,27 +2,25 @@ package org.jetbrains.kotlin.core.launch;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.FileLocator;
 import org.eclipse.core.runtime.IProgressMonitor;
-import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
-import org.eclipse.debug.core.model.ILaunchConfigurationDelegate;
-import org.eclipse.jdt.launching.AbstractJavaLaunchConfigurationDelegate;
+import org.eclipse.jdt.internal.launching.LaunchingMessages;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
-import org.eclipse.jdt.launching.IVMRunner;
-import org.eclipse.jdt.launching.VMRunnerConfiguration;
+import org.eclipse.jdt.launching.JavaLaunchDelegate;
 import org.jetbrains.jet.cli.jvm.K2JVMCompiler;
 import org.jetbrains.kotlin.core.builder.KotlinManager;
 import org.jetbrains.kotlin.core.utils.ProjectUtils;
 import org.osgi.framework.Bundle;
 
-public class LaunchConfigurationDelegate extends AbstractJavaLaunchConfigurationDelegate implements ILaunchConfigurationDelegate {    
+public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
 
     private static String ktHome = "";
     
@@ -40,24 +38,28 @@ public class LaunchConfigurationDelegate extends AbstractJavaLaunchConfiguration
      
     @Override
     public void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
-        
-        if (monitor == null) {
-            monitor = new NullProgressMonitor();
+        List<IFile> projectFiles = KotlinManager.getFilesByProject(configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, (String)null));
+        if (projectFiles == null) {
+            System.out.println("Wrong configuration"); // TODO: ask for better solution
+            
+            return;
         }
         
-        compileKotlinFiles(KotlinManager.getAllFiles().toArray(new IFile[KotlinManager.getAllFiles().size()]), configuration);
+        compileKotlinFiles(projectFiles, configuration);
         
-        IVMRunner runner = getVMRunner(configuration, mode);
-        
+        super.launch(configuration, mode, launch, monitor);
+    }
+    
+    @Override
+    public String verifyMainTypeName(ILaunchConfiguration configuration) throws CoreException {
+        String packageClassName = null;
         try {
-            String packageClassName = getPackageClassName(configuration);
-            VMRunnerConfiguration vmConfig = new VMRunnerConfiguration(packageClassName, new String[] {getOutputDir(configuration)});
-            runner.run(vmConfig, launch, monitor);
+            packageClassName = getPackageClassName(configuration);
         } catch (IllegalArgumentException e) {
-            System.out.println("Wrong configuration");
+            abort(LaunchingMessages.AbstractJavaLaunchConfigurationDelegate_Main_type_not_specified_11, null, IJavaLaunchConfigurationConstants.ERR_UNSPECIFIED_MAIN_TYPE);
         }
         
-        monitor.done();
+        return packageClassName;
     }
     
     private String getPackageClassName(ILaunchConfiguration configuration) {
@@ -68,18 +70,22 @@ public class LaunchConfigurationDelegate extends AbstractJavaLaunchConfiguration
             e.printStackTrace();
         }
         
-        for (IFile file : KotlinManager.getAllFiles()) {
-            if (file.getName().equals(mainClass)) {
-                if (ProjectUtils.getMainClass(Arrays.asList(file)) != null) {
-                    return ProjectUtils.createPackageClassName(file);
+        try {
+            for (IFile file : KotlinManager.getFilesByProject((configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, (String)null)))) {
+                if (file.getName().equals(mainClass)) {
+                    if (ProjectUtils.getMainClass(Arrays.asList(file)) != null) {
+                        return ProjectUtils.createPackageClassName(file);
+                    }
                 }
             }
+        } catch (CoreException e) {
+            e.printStackTrace();
         }
         
         throw new IllegalArgumentException();
     }
     
-    private void compileKotlinFiles(IFile[] files, ILaunchConfiguration configuration) {
+    private void compileKotlinFiles(List<IFile> files, ILaunchConfiguration configuration) throws CoreException {
         StringBuilder command = new StringBuilder();
         command.append("java -cp " + ktHome + "lib/" + ktCompiler);
         command.append(" " + K2JVMCompiler.class.getCanonicalName());
@@ -95,9 +101,9 @@ public class LaunchConfigurationDelegate extends AbstractJavaLaunchConfiguration
             Runtime.getRuntime().exec(command.toString()).waitFor();
         } catch (IOException | InterruptedException e) {
             System.out.println("Exception: " + e.getMessage());
-        }        
-        
-        System.out.println(command);
+            
+            abort("Build error", null, 0);
+        }
     }
     
     private String getOutputDir(ILaunchConfiguration configuration) {
