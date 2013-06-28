@@ -64,6 +64,10 @@ public class KotlinManager {
         updateProjectPsiSources(resource.getProject(), (IFile) resource, flag);
     }
     
+    public static ASTNode getParsedFile(IFile file) {
+        return psiFiles.get(file);
+    }
+    
     public static Collection<ASTNode> getAllPsiFiles() {
         return Collections.unmodifiableCollection(psiFiles.values());
     }
