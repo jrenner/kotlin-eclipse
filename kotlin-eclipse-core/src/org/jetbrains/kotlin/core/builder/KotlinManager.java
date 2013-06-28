@@ -86,6 +86,20 @@ public class KotlinManager {
         return psiFilesByProject;
     }
     
+    public static List<IFile> getFilesByProject(IProject project) {
+        return Collections.unmodifiableList(projectFiles.get(project));
+    }
+    
+    public static List<IFile> getFilesByProject(String projectName) {
+        for (Map.Entry<IProject, List<IFile>> entry : projectFiles.entrySet()) {
+            if (entry.getKey().getName().equals(projectName)) {
+                return Collections.unmodifiableList(entry.getValue());
+            }
+        }
+        
+        return null;
+    }
+    
     public static Set<IFile> getAllFiles() {
         return Collections.unmodifiableSet(psiFiles.keySet());
     }
