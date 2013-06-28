@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.eclipse.core.resources.IContainer;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IAdaptable;
@@ -15,19 +16,20 @@ import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.ui.ILaunchShortcut;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
-import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IFileEditorInput;
-import org.eclipse.ui.PlatformUI;
 import org.jetbrains.jet.plugin.JetFileType;
+import org.jetbrains.kotlin.core.builder.KotlinManager;
 import org.jetbrains.kotlin.core.utils.ProjectUtils;
 import org.jetbrains.kotlin.ui.editors.KotlinEditor;
 
 public class KotlinLaunchShortcut implements ILaunchShortcut {
 
+    private final String launchConfigurationTypeId = "org.jetbrains.kotlin.core.launch.launchConfigurationType";
+    
     @Override
     public void launch(ISelection selection, String mode) {
         if (!(selection instanceof IStructuredSelection)) {
@@ -47,7 +49,7 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
         IFile mainClass = ProjectUtils.getMainClass(files);
         
         if (mainClass == null) {
-            MessageDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Wrong configuration", "Chosen files does not consist main class");
+            launchProject(files.get(0).getProject(), mode);
             
             return;
         }
@@ -55,16 +57,45 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
         launchWithMainClass(mainClass, mode);
     }
     
+    @Override
+    public void launch(IEditorPart editor, String mode) {
+        if (editor instanceof KotlinEditor) {
+            IFile file = null;
+            
+            IEditorInput editorInput = editor.getEditorInput();
+            if (editorInput instanceof IFileEditorInput) {
+                file = ((IFileEditorInput) editorInput).getFile();
+            } else {
+                return;
+            }
+            
+            IFile mainClass = ProjectUtils.getMainClass(Arrays.asList(file));
+            if (mainClass == null) {
+                launchProject(file.getProject(), mode);
+                
+                return;
+            }
+            
+            launchWithMainClass(file, mode);
+        }
+    }
+    
+    private void launchProject(IProject project, String mode) {
+        IFile mainClass = ProjectUtils.getMainClass(KotlinManager.getFilesByProject(project));
+        if (mainClass != null) {
+            launchWithMainClass(mainClass, mode);
+        }
+    }
+    
     private void launchWithMainClass(IFile mainClass, String mode) {
-        ILaunchConfiguration configuration = findLaunchConfiguration(DebugPlugin.getDefault().getLaunchManager()
-                .getLaunchConfigurationType("org.jetbrains.kotlin.core.launch.launchConfigurationType"), mainClass);
+        ILaunchConfiguration configuration = findLaunchConfiguration(getLaunchConfigurationType(), mainClass);
         
         if (configuration == null) {
             configuration = createConfiguration(mainClass);
         } 
         
         if (configuration == null) {
-            return; // MessageDialog.
+            return; // TODO: messagedialog
         } 
         
         try {
@@ -77,10 +108,10 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
     private ILaunchConfiguration createConfiguration(IFile file) {
         ILaunchConfiguration configuration = null;
         ILaunchConfigurationWorkingCopy configWC = null;
-        ILaunchConfigurationType configurationType = DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurationType("org.jetbrains.kotlin.core.launch.launchConfigurationType");
+        ILaunchConfigurationType configurationType = getLaunchConfigurationType();
         
         try {
-            configWC = configurationType.newInstance(null, "New configuration - " + file.getName()); // change configuration name?
+            configWC = configurationType.newInstance(null, "Config - " + file.getName()); // TODO: change configuration name?
             configWC.setAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, file.getName());
             configWC.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, file.getProject().getName());
             
@@ -96,7 +127,8 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
         try {
             ILaunchConfiguration[] configs = DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurations(configurationType);
             for (ILaunchConfiguration config : configs) {
-                if (config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, (String)null).equals(mainClass.getName())) {
+                if (config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, (String)null).equals(mainClass.getName()) && 
+                        config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, (String)null).equals(mainClass.getProject().getName())) {
                     return config;
                 }
             }
@@ -131,27 +163,8 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
         }
     }
 
-    @Override
-    public void launch(IEditorPart editor, String mode) {
-        if (editor instanceof KotlinEditor) {
-            IFile file = null;
-            
-            IEditorInput editorInput = editor.getEditorInput();
-            if (editorInput instanceof IFileEditorInput) {
-                file = ((IFileEditorInput) editorInput).getFile();
-            } else {
-                return;
-            }
-            
-            IFile mainClass = ProjectUtils.getMainClass(Arrays.asList(file));
-            if (mainClass == null) {
-                MessageDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Wrong configuration", "This file does not consist main method");
-                
-                return;
-            }
-            
-            launchWithMainClass(file, mode);
-        }
+    private ILaunchConfigurationType getLaunchConfigurationType() {
+        return DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurationType(launchConfigurationTypeId);
     }
 
 }
