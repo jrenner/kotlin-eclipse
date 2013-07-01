@@ -12,7 +12,6 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
-import org.eclipse.jdt.internal.launching.LaunchingMessages;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.JavaLaunchDelegate;
 import org.jetbrains.jet.cli.jvm.K2JVMCompiler;
@@ -40,12 +39,14 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
         
         return null;
     }
-     
+    
     @Override
     public void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
-        List<IFile> projectFiles = KotlinManager.getFilesByProject(configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, (String)null));
+        String projectName = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, (String)null);
+        
+        List<IFile> projectFiles = KotlinManager.getFilesByProject(projectName);
         if (projectFiles == null) {
-            abort(LaunchingMessages.AbstractJavaLaunchConfigurationDelegate_Java_project_not_specified_9, null, IJavaLaunchConfigurationConstants.ERR_UNSPECIFIED_PROJECT);
+            abort("Project name is invalid: " + projectName, null, IJavaLaunchConfigurationConstants.ERR_UNSPECIFIED_PROJECT);
             
             return;
         }
@@ -60,7 +61,7 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
         try {
             return getPackageClassName(configuration).toString();
         } catch (IllegalArgumentException e) {
-            abort(LaunchingMessages.AbstractJavaLaunchConfigurationDelegate_Main_type_not_specified_11, null, IJavaLaunchConfigurationConstants.ERR_UNSPECIFIED_MAIN_TYPE);
+            abort("File with main method not defined", null, IJavaLaunchConfigurationConstants.ERR_UNSPECIFIED_MAIN_TYPE);
         }
         
         return null;
@@ -75,7 +76,8 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
         }
         
         try {
-            for (IFile file : KotlinManager.getFilesByProject((configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, (String)null)))) {
+            String projectName = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, (String)null);
+            for (IFile file : KotlinManager.getFilesByProject(projectName)) {
                 if (file.getName().equals(mainClass)) {
                     if (ProjectUtils.getMainClass(Arrays.asList(file)) != null) {
                         return ProjectUtils.createPackageClassName(file);
