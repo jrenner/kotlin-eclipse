@@ -23,6 +23,7 @@ import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IFileEditorInput;
 import org.jetbrains.jet.plugin.JetFileType;
 import org.jetbrains.kotlin.core.builder.KotlinManager;
+import org.jetbrains.kotlin.core.log.KotlinLogger;
 import org.jetbrains.kotlin.core.utils.ProjectUtils;
 import org.jetbrains.kotlin.ui.editors.KotlinEditor;
 
@@ -95,7 +96,7 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
         } 
         
         if (configuration == null) {
-            return; // TODO: messagedialog
+            return; 
         } 
         
         try {
@@ -117,7 +118,7 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
             
             configuration = configWC.doSave();
         } catch (CoreException e) {
-            e.printStackTrace();
+            KotlinLogger.logError(e);
         }
         
         return configuration;
@@ -133,7 +134,7 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
                 }
             }
         } catch (CoreException e) {
-            e.printStackTrace();
+            KotlinLogger.logError(e);
         }
         
         return null;
@@ -156,7 +157,7 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
                         addFiles(files, child);
                     }
                 } catch (CoreException e) {
-                    e.printStackTrace();
+                    KotlinLogger.logError(e);
                 }
                 
                 break;

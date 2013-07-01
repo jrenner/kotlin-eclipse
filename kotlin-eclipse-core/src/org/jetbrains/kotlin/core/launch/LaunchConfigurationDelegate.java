@@ -17,6 +17,7 @@ import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.JavaLaunchDelegate;
 import org.jetbrains.jet.cli.jvm.K2JVMCompiler;
 import org.jetbrains.kotlin.core.builder.KotlinManager;
+import org.jetbrains.kotlin.core.log.KotlinLogger;
 import org.jetbrains.kotlin.core.utils.ProjectUtils;
 import org.osgi.framework.Bundle;
 
@@ -33,7 +34,7 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
             
             return path.removeLastSegments(2).toPortableString() + "/kotlin-bundled-compiler/";
         } catch (IOException e) {
-            e.printStackTrace();
+            KotlinLogger.logError("Could not find path to ui plugin.xml", e);
         }
         
         return null;
@@ -70,7 +71,7 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
         try {
             mainClass = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, (String)null);
         } catch (CoreException e) {
-            e.printStackTrace();
+            KotlinLogger.logError("Unspecified name of main class in configuration", e);
         }
         
         try {
@@ -82,7 +83,7 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
                 }
             }
         } catch (CoreException e) {
-            e.printStackTrace();
+            KotlinLogger.logError(e);
         }
         
         throw new IllegalArgumentException();
@@ -103,7 +104,7 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
         try {
             Runtime.getRuntime().exec(command.toString()).waitFor();
         } catch (IOException | InterruptedException e) {
-            System.out.println("Exception: " + e.getMessage());
+            KotlinLogger.logError("Could not execute kotlin compiler", e);
             
             abort("Build error", null, 0);
         }
@@ -115,7 +116,7 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
             if (cp.length > 0)
                 return cp[0];
         } catch (CoreException e) {
-            //swallow
+            KotlinLogger.logError(e);
         }
         
         return ".";

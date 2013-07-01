@@ -10,6 +10,7 @@ import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.ui.handlers.HandlerUtil;
 import org.jetbrains.jet.plugin.JetFileType;
+import org.jetbrains.kotlin.core.log.KotlinLogger;
 import org.jetbrains.kotlin.parser.KotlinParser;
 import org.jetbrains.kotlin.ui.editors.KotlinEditor;
 
@@ -34,7 +35,7 @@ public class KotlinCodeFormatter extends AbstractHandler {
             
             tempFile.delete();
         } catch (IOException e) {
-            e.printStackTrace();
+            KotlinLogger.logError(e);
         }
         
         if (parsedFile != null) {

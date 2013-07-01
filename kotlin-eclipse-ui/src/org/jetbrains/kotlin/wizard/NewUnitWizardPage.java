@@ -31,6 +31,7 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.dialogs.SelectionDialog;
+import org.jetbrains.kotlin.core.log.KotlinLogger;
 
 public class NewUnitWizardPage extends WizardPage implements IWizardPage {
 
@@ -155,7 +156,7 @@ public class NewUnitWizardPage extends WizardPage implements IWizardPage {
                         }
                     }
                 } catch (JavaModelException jme) {
-                    jme.printStackTrace();
+                    KotlinLogger.logError(jme);
                 }
             }
         });
@@ -230,7 +231,7 @@ public class NewUnitWizardPage extends WizardPage implements IWizardPage {
                             result = dialog.getResult()[0];
                         }
                     } catch (JavaModelException jme) {
-                        jme.printStackTrace();
+                        KotlinLogger.logError(jme);
                     }
                     if (result != null) {
                         packageName = ((IPackageFragment) result).getElementName();
@@ -307,7 +308,7 @@ public class NewUnitWizardPage extends WizardPage implements IWizardPage {
                                 findPackageFragment(selectedJavaElement.getPath().makeAbsolute().removeLastSegments(1)).
                                 getElementName();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        KotlinLogger.logError(e);
                     }
                     break;
             }
@@ -320,7 +321,7 @@ public class NewUnitWizardPage extends WizardPage implements IWizardPage {
                                 findPackageFragment(selectedResource.getFullPath().makeAbsolute().removeLastSegments(1)).
                                 getElementName();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        KotlinLogger.logError(e);
                     }
                     break;
             }

@@ -1,5 +1,6 @@
 package org.jetbrains.kotlin.ui.editors;
 
+import org.eclipse.core.runtime.Assert;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.DocumentEvent;
 import org.eclipse.jface.text.IDocument;
@@ -10,8 +11,8 @@ import org.eclipse.jface.text.TextAttribute;
 import org.eclipse.jface.text.TextPresentation;
 import org.eclipse.jface.text.presentation.IPresentationDamager;
 import org.eclipse.jface.text.presentation.IPresentationRepairer;
-import org.eclipse.core.runtime.Assert;
 import org.eclipse.swt.custom.StyleRange;
+import org.jetbrains.kotlin.core.log.KotlinLogger;
 
 public class NonRuleBasedDamagerRepairer implements IPresentationDamager, IPresentationRepairer {
 
@@ -90,6 +91,7 @@ public class NonRuleBasedDamagerRepairer implements IPresentationDamager, IPrese
                 return new Region(start, end - start);
 
             } catch (BadLocationException x) {
+                KotlinLogger.logError(x);
             }
         }
 
