@@ -1,7 +1,6 @@
 package org.jetbrains.kotlin.ui.launch;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.resources.IContainer;
@@ -61,23 +60,20 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
     @Override
     public void launch(IEditorPart editor, String mode) {
         if (editor instanceof KotlinEditor) {
-            IFile file = null;
-            
             IEditorInput editorInput = editor.getEditorInput();
-            if (editorInput instanceof IFileEditorInput) {
-                file = ((IFileEditorInput) editorInput).getFile();
-            } else {
+            if (!(editorInput instanceof IFileEditorInput)) {
                 return;
-            }
+            } 
             
-            IFile mainClass = ProjectUtils.getMainClass(Arrays.asList(file));
-            if (mainClass == null) {
-                launchProject(file.getProject(), mode);
+            IFile file = ((IFileEditorInput) editorInput).getFile();
+            
+            if (ProjectUtils.hasMain(file)) {
+                launchWithMainClass(file, mode);
                 
                 return;
             }
-            
-            launchWithMainClass(file, mode);
+
+            launchProject(file.getProject(), mode);
         }
     }
     

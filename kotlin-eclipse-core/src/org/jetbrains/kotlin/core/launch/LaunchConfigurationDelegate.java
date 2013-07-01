@@ -1,7 +1,6 @@
 package org.jetbrains.kotlin.core.launch;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
@@ -79,7 +78,7 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
             String projectName = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, (String)null);
             for (IFile file : KotlinManager.getFilesByProject(projectName)) {
                 if (file.getName().equals(mainClass)) {
-                    if (ProjectUtils.getMainClass(Arrays.asList(file)) != null) {
+                    if (ProjectUtils.hasMain(file)) {
                         return ProjectUtils.createPackageClassName(file);
                     }
                 }

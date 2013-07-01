@@ -1,5 +1,6 @@
 package org.jetbrains.kotlin.core.utils;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 import org.eclipse.core.resources.IFile;
@@ -19,6 +20,10 @@ public class ProjectUtils {
         }
                 
         return null;
+    }
+    
+    public static boolean hasMain(IFile file) {
+        return getMainClass(Arrays.asList(file)) != null;
     }
     
     public static String getPackageByFile(IFile file) {
