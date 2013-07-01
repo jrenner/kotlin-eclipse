@@ -25,7 +25,7 @@ public class ProjectUtils {
         return new KotlinEnvironment().getJetFile(file).getPackageName();
     }
     
-    public static String createPackageClassName(IFile file) {
-        return PackageClassUtils.getPackageClassFqName(new FqName(getPackageByFile(file))).toString();
+    public static FqName createPackageClassName(IFile file) {
+        return PackageClassUtils.getPackageClassFqName(new FqName(getPackageByFile(file)));
     }
 }

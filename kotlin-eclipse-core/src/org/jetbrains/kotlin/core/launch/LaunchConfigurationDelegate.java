@@ -16,6 +16,7 @@ import org.eclipse.jdt.internal.launching.LaunchingMessages;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.JavaLaunchDelegate;
 import org.jetbrains.jet.cli.jvm.K2JVMCompiler;
+import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.kotlin.core.builder.KotlinManager;
 import org.jetbrains.kotlin.core.log.KotlinLogger;
 import org.jetbrains.kotlin.core.utils.ProjectUtils;
@@ -56,17 +57,16 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
     
     @Override
     public String verifyMainTypeName(ILaunchConfiguration configuration) throws CoreException {
-        String packageClassName = null;
         try {
-            packageClassName = getPackageClassName(configuration);
+            return getPackageClassName(configuration).toString();
         } catch (IllegalArgumentException e) {
             abort(LaunchingMessages.AbstractJavaLaunchConfigurationDelegate_Main_type_not_specified_11, null, IJavaLaunchConfigurationConstants.ERR_UNSPECIFIED_MAIN_TYPE);
         }
         
-        return packageClassName;
+        return null;
     }
     
-    private String getPackageClassName(ILaunchConfiguration configuration) {
+    private FqName getPackageClassName(ILaunchConfiguration configuration) {
         String mainClass = "";
         try {
             mainClass = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, (String)null);
