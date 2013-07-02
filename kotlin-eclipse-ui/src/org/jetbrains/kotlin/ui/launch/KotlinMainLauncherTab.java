@@ -7,11 +7,10 @@ import java.util.List;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.debug.ui.ILaunchConfigurationTab;
 import org.eclipse.jdt.debug.ui.launchConfigurations.JavaMainTab;
+import org.eclipse.jdt.internal.ui.viewsupport.JavaUILabelProvider;
 import org.eclipse.jface.viewers.ArrayContentProvider;
-import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.window.Window;
 import org.eclipse.ui.dialogs.ListDialog;
-import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.kotlin.core.builder.KotlinManager;
 import org.jetbrains.kotlin.core.utils.ProjectUtils;
 
@@ -24,7 +23,7 @@ public class KotlinMainLauncherTab extends JavaMainTab implements ILaunchConfigu
         dialog.setMessage("Select a Kotlin file to run");
         dialog.setTitle("Choose Kotlin Compilation Unit");
         dialog.setContentProvider(new ArrayContentProvider());
-        dialog.setLabelProvider(new LabelProvider());
+        dialog.setLabelProvider(new JavaUILabelProvider());
 
         Collection<IFile> projectFiles = null;
         projectFiles = KotlinManager.getFilesByProject(fProjText.getText());
@@ -32,13 +31,14 @@ public class KotlinMainLauncherTab extends JavaMainTab implements ILaunchConfigu
             projectFiles = KotlinManager.getAllFiles();
         } 
         
-        List<FqName> finalNames = new ArrayList<FqName>();
+        List<IFile> mainFiles = new ArrayList<IFile>();
         for (IFile file : projectFiles) {
             if (ProjectUtils.hasMain(file)) {
-                finalNames.add(ProjectUtils.createPackageClassName(file));
+                mainFiles.add(file);
             }
         }
-        dialog.setInput(finalNames);
+        
+        dialog.setInput(mainFiles);
         
         if (dialog.open() == Window.CANCEL) {
             return;
@@ -49,8 +49,8 @@ public class KotlinMainLauncherTab extends JavaMainTab implements ILaunchConfigu
             return;
         }
         
-        if (results[0] instanceof FqName) {
-            fMainText.setText(((FqName) results[0]).toString());
+        if (results[0] instanceof IFile) {
+            fMainText.setText(ProjectUtils.createPackageClassName(((IFile) results[0])).toString());
         }
     }
 }
