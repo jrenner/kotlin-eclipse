@@ -69,22 +69,14 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
     }
     
     private FqName getPackageClassName(ILaunchConfiguration configuration) {
-        String mainClass = "";
-        try {
-            mainClass = getMainTypeName(configuration);
-        } catch (CoreException e) {
-            KotlinLogger.logError("Unspecified name of main class in configuration", e);
-        }
-        
         try {
             String projectName = getJavaProjectName(configuration);
+            FqName mainClassName = new FqName(getMainTypeName(configuration));
             for (IFile file : KotlinManager.getFilesByProject(projectName)) {
-                if (file.getName().equals(mainClass)) {
-                    if (ProjectUtils.hasMain(file)) {
-                        return ProjectUtils.createPackageClassName(file);
+                if (ProjectUtils.hasMain(file) && ProjectUtils.createPackageClassName(file).equalsTo(mainClassName)) {
+                        return mainClassName;
                     }
                 }
-            }
         } catch (CoreException e) {
             KotlinLogger.logError(e);
         }

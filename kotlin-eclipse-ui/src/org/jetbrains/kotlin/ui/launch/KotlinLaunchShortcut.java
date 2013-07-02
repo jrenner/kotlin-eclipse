@@ -109,7 +109,7 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
         
         try {
             configWC = configurationType.newInstance(null, "Config - " + file.getName());
-            configWC.setAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, file.getName());
+            configWC.setAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, ProjectUtils.createPackageClassName(file).toString());
             configWC.setAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, file.getProject().getName());
             
             configuration = configWC.doSave();
@@ -123,8 +123,9 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
     private ILaunchConfiguration findLaunchConfiguration(ILaunchConfigurationType configurationType, IFile mainClass) {
         try {
             ILaunchConfiguration[] configs = DebugPlugin.getDefault().getLaunchManager().getLaunchConfigurations(configurationType);
+            String mainClassName = ProjectUtils.createPackageClassName(mainClass).toString();
             for (ILaunchConfiguration config : configs) {
-                if (config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, (String)null).equals(mainClass.getName()) && 
+                if (config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, (String)null).equals(mainClassName) && 
                         config.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, (String)null).equals(mainClass.getProject().getName())) {
                     return config;
                 }
