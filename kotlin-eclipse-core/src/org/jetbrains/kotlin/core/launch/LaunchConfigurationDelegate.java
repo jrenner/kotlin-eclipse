@@ -11,6 +11,8 @@ import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
+import org.eclipse.jdt.core.IClasspathEntry;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.JavaLaunchDelegate;
 import org.jetbrains.jet.cli.jvm.K2JVMCompiler;
@@ -41,7 +43,7 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
     
     @Override
     public void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor) throws CoreException {
-        String projectName = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, (String)null);
+        String projectName = getJavaProjectName(configuration);
         
         List<IFile> projectFiles = KotlinManager.getFilesByProject(projectName);
         if (projectFiles == null) {
@@ -69,13 +71,13 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
     private FqName getPackageClassName(ILaunchConfiguration configuration) {
         String mainClass = "";
         try {
-            mainClass = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_MAIN_TYPE_NAME, (String)null);
+            mainClass = getMainTypeName(configuration);
         } catch (CoreException e) {
             KotlinLogger.logError("Unspecified name of main class in configuration", e);
         }
         
         try {
-            String projectName = configuration.getAttribute(IJavaLaunchConfigurationConstants.ATTR_PROJECT_NAME, (String)null);
+            String projectName = getJavaProjectName(configuration);
             for (IFile file : KotlinManager.getFilesByProject(projectName)) {
                 if (file.getName().equals(mainClass)) {
                     if (ProjectUtils.hasMain(file)) {
@@ -96,12 +98,19 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
         command.append(" " + K2JVMCompiler.class.getCanonicalName());
         command.append(" -kotlinHome " + ktHome);
 
-        command.append(" -src");
-        for (IFile file : files) {
-            command.append(" " + file.getRawLocation().toOSString());
+
+        command.append(" -src ");
+        
+        IJavaProject javaProject = getJavaProject(configuration);
+        IClasspathEntry[] classpathEntries = javaProject.getRawClasspath();
+        for (IClasspathEntry classpathEntry : classpathEntries) {
+            if (classpathEntry.getEntryKind() == IClasspathEntry.CPE_SOURCE) {
+                command.append(javaProject.getProject().getLocation().removeLastSegments(1).toPortableString() + classpathEntry.getPath().toPortableString() + " ");
+            }
         }
         
         command.append(" -output " + getOutputDir(configuration));
+        
         try {
             Runtime.getRuntime().exec(command.toString()).waitFor();
         } catch (IOException | InterruptedException e) {
