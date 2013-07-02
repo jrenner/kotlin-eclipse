@@ -4,7 +4,6 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.IDocument;
 import org.eclipse.jface.text.ITextDoubleClickStrategy;
 import org.eclipse.jface.text.ITextViewer;
-import org.jetbrains.kotlin.core.log.KotlinLogger;
 
 public class DoubleClickStrategy implements ITextDoubleClickStrategy {
     protected ITextViewer text;
@@ -67,7 +66,7 @@ public class DoubleClickStrategy implements ITextDoubleClickStrategy {
             text.setSelectedRange(offset, len);
             return true;
         } catch (BadLocationException x) {
-            KotlinLogger.logError(x);
+            x.printStackTrace();
         }
 
         return false;

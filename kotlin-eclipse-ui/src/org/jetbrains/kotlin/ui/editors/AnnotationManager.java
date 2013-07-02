@@ -18,7 +18,6 @@ import org.eclipse.jface.text.source.IAnnotationModelExtension;
 import org.eclipse.ui.editors.text.TextEditor;
 import org.eclipse.ui.texteditor.IDocumentProvider;
 import org.jetbrains.kotlin.core.builder.KotlinManager;
-import org.jetbrains.kotlin.core.log.KotlinLogger;
 import org.jetbrains.kotlin.utils.LineEndUtil;
 
 import com.intellij.openapi.util.TextRange;
@@ -67,7 +66,7 @@ public class AnnotationManager {
             try {
                 file.deleteMarkers(IMarker.PROBLEM, true, IResource.DEPTH_INFINITE);
             } catch (CoreException e) {
-                KotlinLogger.logError(e);
+                e.printStackTrace();
             }
         }
     }
@@ -84,7 +83,7 @@ public class AnnotationManager {
             int end = LineEndUtil.convertLfToOsOffset(fileText, range.getEndOffset());
             problemMarker.setAttribute(IMarker.CHAR_END, end);
         } catch (CoreException e) {
-            KotlinLogger.logError(e);
+            e.printStackTrace();
         }
     }
 }

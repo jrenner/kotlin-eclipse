@@ -7,7 +7,6 @@ import org.eclipse.core.resources.IResourceDeltaVisitor;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.jobs.Job;
 import org.jetbrains.kotlin.core.builder.KotlinManager;
-import org.jetbrains.kotlin.core.log.KotlinLogger;
 
 public class AnnotationUpdater implements IResourceChangeListener {
     
@@ -39,7 +38,7 @@ public class AnnotationUpdater implements IResourceChangeListener {
                     }
                 });
             } catch (CoreException e) {
-                KotlinLogger.logError(e);
+                e.printStackTrace();
             }
         }
     }

@@ -10,7 +10,6 @@ import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.custom.VerifyKeyListener;
 import org.eclipse.swt.events.VerifyEvent;
 import org.eclipse.swt.graphics.Point;
-import org.jetbrains.kotlin.core.log.KotlinLogger;
 
 public class BracketInserter implements VerifyKeyListener {
     
@@ -101,7 +100,7 @@ public class BracketInserter implements VerifyKeyListener {
                 }
             }
         } catch (BadLocationException exc) {
-            KotlinLogger.logError(exc);
+            exc.printStackTrace();
         }
         
         return true;
