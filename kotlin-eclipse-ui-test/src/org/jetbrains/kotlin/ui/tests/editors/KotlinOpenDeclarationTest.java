@@ -62,7 +62,6 @@ public class KotlinOpenDeclarationTest extends KotlinOpenDeclarationTestCase {
 				"public class Some1 {<br>" +
 				"public void testMethod<caret>() {}<br>" +
 				"}");
-				
 	}
 	
 	@Test

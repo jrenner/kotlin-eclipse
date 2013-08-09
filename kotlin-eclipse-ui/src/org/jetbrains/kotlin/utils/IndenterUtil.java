@@ -7,6 +7,7 @@ public class IndenterUtil {
 
     private static final char tabChar = '\t';
     private static final char spaceSeparator = ' ';
+    private static final String lineSeparator = "\n";
     
     public static String createWhiteSpace(int curIndent, int countBreakLines) {
         StringBuilder stringBuilder = new StringBuilder();
@@ -35,6 +36,17 @@ public class IndenterUtil {
         }
         
         return res.toString();
+    }
+    
+    public static int getLineSeparatorsOccurences(String text) {
+        int count = 0;
+        for (int i = 0; i < text.length(); ++i) {
+            if (text.charAt(i) == lineSeparator.charAt(0)) {
+                count++;
+            }
+        }
+        
+        return count;
     }
     
     public static int getDefaultIndent() {

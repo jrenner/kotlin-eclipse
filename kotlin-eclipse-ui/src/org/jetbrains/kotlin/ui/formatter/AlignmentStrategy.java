@@ -51,7 +51,7 @@ public class AlignmentStrategy {
                         shift--;
                     }
                     
-                    edit.append(IndenterUtil.createWhiteSpace(shift, getLineSeparatorsOccurences(psiElement.getText())));
+                    edit.append(IndenterUtil.createWhiteSpace(shift, IndenterUtil.getLineSeparatorsOccurences(psiElement.getText())));
                 } else {
                     edit.append(psiElement.getText());
                 }
@@ -62,17 +62,6 @@ public class AlignmentStrategy {
     
     private boolean isNewLine(LeafPsiElement psiElement) {
         return psiElement.getElementType() == JetTokens.WHITE_SPACE && psiElement.getText().contains(lineSeparator);
-    }
-    
-    private int getLineSeparatorsOccurences(String text) {
-        int count = 0;
-        for (int i = 0; i < text.length(); ++i) {
-            if (text.charAt(i) == lineSeparator.charAt(0)) {
-                count++;
-            }
-        }
-        
-        return count;
     }
     
     private boolean isBrace(PsiElement psiElement) {

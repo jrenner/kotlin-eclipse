@@ -69,4 +69,15 @@ public abstract class KotlinEditorTestCase {
     public String removeTags(String text) {
     	return resolveTestTags(text).replaceAll("<caret>", "");
     }
+    
+	public void createSourceFile(String sourceFileName, String sourceFile) {
+		if (sourceFileName != null) {
+			sourceFile = removeTags(sourceFile);
+			try {
+				testEditor.getTestJavaProject().createSourceFile("testing", sourceFileName, sourceFile);
+			} catch (CoreException e) {
+				throw new RuntimeException(e);
+			}
+		}
+	}
 }
