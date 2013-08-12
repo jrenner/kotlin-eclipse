@@ -67,8 +67,15 @@ public class DiagnosticAnnotationUtil {
         
         String message = DefaultErrorMessages.RENDERER.render(diagnostic);
         String annotationType = getAnnotationType(diagnostic.getSeverity());
-        
-        DiagnosticAnnotation annotation = new DiagnosticAnnotation(offset, length, annotationType, message);
+        String markedText = diagnostic.getPsiElement().getText();
+
+        boolean isQuickFixable = false;
+        String factoryName = diagnostic.getFactory().getName();
+        if ("UNRESOLVED_REFERENCE".equals(factoryName)) {
+            isQuickFixable = true;
+        }
+        DiagnosticAnnotation annotation = new DiagnosticAnnotation(offset, length, annotationType, 
+                message, markedText, isQuickFixable);
         
         return annotation;
     }
