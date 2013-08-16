@@ -2,10 +2,14 @@ package org.jetbrains.kotlin.ui.editors.codeassist;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.runtime.Assert;
+import org.eclipse.jdt.ui.JavaUI;
+import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextViewer;
+import org.eclipse.jface.text.Region;
 import org.eclipse.jface.text.contentassist.CompletionProposal;
 import org.eclipse.jface.text.contentassist.ContentAssistEvent;
 import org.eclipse.jface.text.contentassist.ICompletionListener;
@@ -13,7 +17,13 @@ import org.eclipse.jface.text.contentassist.ICompletionProposal;
 import org.eclipse.jface.text.contentassist.IContentAssistProcessor;
 import org.eclipse.jface.text.contentassist.IContextInformation;
 import org.eclipse.jface.text.contentassist.IContextInformationValidator;
+import org.eclipse.jface.text.templates.DocumentTemplateContext;
+import org.eclipse.jface.text.templates.Template;
+import org.eclipse.jface.text.templates.TemplateContext;
+import org.eclipse.jface.text.templates.TemplateProposal;
+import org.eclipse.swt.graphics.Image;
 import org.jetbrains.kotlin.ui.editors.KeywordManager;
+import org.jetbrains.kotlin.ui.editors.templates.KotlinTemplateManager;
 
 public class CompletionProcessor implements IContentAssistProcessor, ICompletionListener {
      
@@ -53,8 +63,29 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         
         //Keywords
         proposals.addAll(generateKeywordProposals(viewer, identOffset, offset, identifierPart));
+        proposals.addAll(generateTemplateProposals(viewer, offset, identifierPart));
         
         return proposals.toArray(new ICompletionProposal[proposals.size()]);
+    }
+    
+    private Collection<ICompletionProposal> generateTemplateProposals(ITextViewer viewer, int offset, String identifierPart) {
+        TemplateContext templateContext = new DocumentTemplateContext(
+                KotlinTemplateManager.INSTANCE.getContextTypeRegistry().getContextType("org.jetbrains.kotlin.ui.editors.contextType"), viewer.getDocument(), offset, 0);
+        Template[] templates = KotlinTemplateManager.INSTANCE.getTemplateStore().getTemplates(templateContext.getContextType().getId());
+        List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+        if (templates == null || identifierPart == null) {
+            return Collections.emptyList();
+        }
+        
+        Image img = JavaUI.getSharedImages().getImage(org.eclipse.ui.ISharedImages.IMG_OBJ_ADD);
+        for (Template template : templates) {
+            if (template.getName().startsWith(identifierPart)) {
+                IRegion region = new Region(offset - identifierPart.length(), identifierPart.length());
+                proposals.add(new TemplateProposal(template, templateContext, region, img));
+            }
+        }
+        
+        return proposals;
     }
 
     /**
