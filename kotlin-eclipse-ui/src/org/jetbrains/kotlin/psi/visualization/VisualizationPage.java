@@ -1,7 +1,6 @@
 package org.jetbrains.kotlin.psi.visualization;
 
-import java.io.File;
-
+import org.eclipse.core.resources.IFile;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.jface.viewers.DoubleClickEvent;
@@ -30,11 +29,11 @@ public final class VisualizationPage extends Dialog {
 
     private final Point pageSize = new Point(750, 650);
     private final String sourceCode;
-    private final File file;
+    private final IFile file;
     
     private final String title = "Psi Viewer";
     
-    public VisualizationPage(Shell parentShell, String sourceCode, File file) {
+    public VisualizationPage(Shell parentShell, String sourceCode, IFile file) {
         super(parentShell);
         
         if (sourceCode == null || file == null || !file.exists()) {

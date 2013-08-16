@@ -11,6 +11,7 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.wizards.newresource.BasicNewResourceWizard;
 import org.jetbrains.kotlin.core.log.KotlinLogger;
 import org.jetbrains.kotlin.model.KotlinNature;
+import org.jetbrains.kotlin.utils.IndenterUtil;
 
 public class NewUnitWizard extends Wizard implements INewWizard {
 
@@ -32,7 +33,7 @@ public class NewUnitWizard extends Wizard implements INewWizard {
 
     @Override
     public boolean performFinish() {
-        contents = createPackageHeader();
+        contents = createPackageHeader() + IndenterUtil.createWhiteSpace(0, 2);
         FileCreationOp op = new FileCreationOp(page.getSourceDir(), page.getPackageFragment(), page.getUnitName(),
                 false, contents, getShell());
 

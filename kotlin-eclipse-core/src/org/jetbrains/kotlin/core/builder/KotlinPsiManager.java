@@ -109,7 +109,7 @@ public class KotlinPsiManager {
             
             ASTNode parsedFile;
             if (sourceCode != null) {
-                parsedFile = parseText(sourceCode);
+                parsedFile = parseText(sourceCode, JavaCore.create(file.getProject()));
             } else {
                 parsedFile = KotlinParser.parse(file);
             }
@@ -194,7 +194,7 @@ public class KotlinPsiManager {
     }
     
     @NotNull
-    private ASTNode parseText(@NotNull String text) {
+    private ASTNode parseText(@NotNull String text, IJavaProject javaProject) {
         try {
             File tempFile;
             tempFile = File.createTempFile("temp", "." + JetFileType.INSTANCE.getDefaultExtension());
@@ -202,7 +202,7 @@ public class KotlinPsiManager {
             bw.write(text);
             bw.close();
             
-            ASTNode parsedFile = new KotlinParser(tempFile).parse();
+            ASTNode parsedFile = new KotlinParser(tempFile, javaProject).parse();
             
             return parsedFile;
         } catch (IOException e) {
