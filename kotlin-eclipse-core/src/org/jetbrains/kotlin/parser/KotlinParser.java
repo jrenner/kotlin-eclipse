@@ -3,6 +3,8 @@ package org.jetbrains.kotlin.parser;
 import java.io.File;
 
 import org.eclipse.core.resources.IFile;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.parsing.JetParser;
@@ -10,44 +12,26 @@ import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.plugin.JetLanguage;
 import org.jetbrains.kotlin.core.utils.KotlinEnvironment;
 
-import com.intellij.core.JavaCoreApplicationEnvironment;
-import com.intellij.core.JavaCoreProjectEnvironment;
 import com.intellij.lang.ASTNode;
 import com.intellij.lang.PsiBuilder;
 import com.intellij.lang.PsiBuilderFactory;
-import com.intellij.openapi.Disposable;
-import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
 
 public class KotlinParser {
 
     private final File file;
     
     private ASTNode tree;
-    private final JavaCoreApplicationEnvironment applicationEnvironment;
-    private final Project project;
+    private final KotlinEnvironment kotlinEnvironment;
     
-    private static final Disposable DISPOSABLE = new Disposable() {
-        
-        @Override
-        public void dispose() {
-        }
-    };
-    
-    public KotlinParser(File file) {
+    public KotlinParser(File file, IJavaProject javaProject) {
         this.file = file;
         this.tree = null;
-        
-        applicationEnvironment = KotlinEnvironment.getApplicationEnvironment();
-        JavaCoreProjectEnvironment projectEnvironment = new JavaCoreProjectEnvironment(DISPOSABLE, applicationEnvironment);
-        
-        project = projectEnvironment.getProject();
+        kotlinEnvironment = KotlinEnvironment.getEnvironmentForTempFile(javaProject);
     }
     
     public KotlinParser(@NotNull IFile iFile) {
-        this(new File(iFile.getRawLocation().toOSString()));
+        this(new File(iFile.getRawLocation().toOSString()), JavaCore.create(iFile.getProject()));
     }
     
     @NotNull
@@ -61,7 +45,7 @@ public class KotlinParser {
     
     @NotNull
     public ASTNode parse() {
-        JetParser jetParser = new JetParser(project);
+        JetParser jetParser = new JetParser(kotlinEnvironment.getProject());
         tree = jetParser.parse(null, createPsiBuilder(getNode()), getPsiFile());
         
         return tree;
@@ -69,25 +53,13 @@ public class KotlinParser {
     
     @NotNull
     private PsiBuilder createPsiBuilder(ASTNode chameleon) {
-        return PsiBuilderFactory.getInstance().createBuilder(project, chameleon, null, 
+        return PsiBuilderFactory.getInstance().createBuilder(kotlinEnvironment.getProject(), chameleon, null, 
                 JetLanguage.INSTANCE, chameleon.getChars());
     }
     
     @Nullable
     private PsiFile getPsiFile() {
-        String path = file.getAbsolutePath();
-        
-        if (path == null) {
-            return null;
-        }
-        
-        VirtualFile fileByPath = applicationEnvironment.getLocalFileSystem().findFileByPath(path);
-        
-        if (fileByPath == null) {
-            return null;
-        }
-        
-        return PsiManager.getInstance(project).findFile(fileByPath);
+        return kotlinEnvironment.getJetFile(file);
     }
     
     @Nullable

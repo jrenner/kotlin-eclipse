@@ -1,7 +1,9 @@
 package org.jetbrains.kotlin.core.utils;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
@@ -35,7 +37,6 @@ import com.intellij.psi.PsiManager;
 
 public class KotlinEnvironment {
     
-    private static final JavaCoreApplicationEnvironment applicationEnvironment;
     
     private static final Disposable DISPOSABLE = new Disposable() {
         
@@ -44,22 +45,19 @@ public class KotlinEnvironment {
         }
     };
     
-    static {
-        applicationEnvironment = new JavaCoreApplicationEnvironment(DISPOSABLE);
-        
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, "kt");
-        applicationEnvironment.registerFileType(JetFileType.INSTANCE, "jet");
-        applicationEnvironment.registerParserDefinition(new JetParserDefinition());
-
-        applicationEnvironment.getApplication().registerService(OperationModeProvider.class, new CompilerModeProvider());
-    }
+    private static final Map<IJavaProject, KotlinEnvironment> cachedEnvironmentForTempFiles = new HashMap<>();
     
+    private final JavaCoreApplicationEnvironment applicationEnvironment;
     private final JavaCoreProjectEnvironment projectEnvironment;
     private final MockProject project;
     private final IJavaProject javaProject;
     
-    public KotlinEnvironment(IJavaProject javaProject) {
+    private static final Object cacheEnvironmentLock = new Object();
+    
+    public KotlinEnvironment(@NotNull IJavaProject javaProject) {
         this.javaProject = javaProject;
+        
+        applicationEnvironment = createJavaCoreApplicationEnvironment();
         
         projectEnvironment = new JavaCoreProjectEnvironment(DISPOSABLE, applicationEnvironment);
         
@@ -75,6 +73,33 @@ public class KotlinEnvironment {
         addKotlinRuntime();
         addSourcesToClasspath();
         addLibsToClasspath();
+        
+        synchronized (cacheEnvironmentLock) {
+            cachedEnvironmentForTempFiles.put(javaProject, this);   
+        }
+    }
+    
+    @NotNull
+    public static KotlinEnvironment getEnvironmentForTempFile(IJavaProject javaProject) {
+        synchronized (cacheEnvironmentLock) {
+            if (!cachedEnvironmentForTempFiles.containsKey(javaProject)) {
+                cachedEnvironmentForTempFiles.put(javaProject, new KotlinEnvironment(javaProject));
+            }
+            
+            return cachedEnvironmentForTempFiles.get(javaProject);
+        }            
+    }
+    
+    private JavaCoreApplicationEnvironment createJavaCoreApplicationEnvironment() {
+        JavaCoreApplicationEnvironment javaApplicationEnvironment = new JavaCoreApplicationEnvironment(DISPOSABLE);
+        
+        javaApplicationEnvironment.registerFileType(JetFileType.INSTANCE, "kt");
+        javaApplicationEnvironment.registerFileType(JetFileType.INSTANCE, "jet");
+        javaApplicationEnvironment.registerParserDefinition(new JetParserDefinition());
+
+        javaApplicationEnvironment.getApplication().registerService(OperationModeProvider.class, new CompilerModeProvider());
+        
+        return javaApplicationEnvironment;
     }
     
     private void addLibsToClasspath() {
@@ -137,7 +162,12 @@ public class KotlinEnvironment {
     
     @Nullable
     public JetFile getJetFile(@NotNull IFile file) {
-        String path = file.getRawLocation().toOSString();
+        return getJetFile(new File(file.getRawLocation().toOSString()));
+    }
+    
+    @Nullable
+    public JetFile getJetFile(@NotNull File file) {
+        String path = file.getAbsolutePath();
         VirtualFile fileByPath = applicationEnvironment.getLocalFileSystem().findFileByPath(path);
         
         return (JetFile) PsiManager.getInstance(project).findFile(fileByPath);
@@ -153,7 +183,7 @@ public class KotlinEnvironment {
     }
     
     @NotNull
-    public static JavaCoreApplicationEnvironment getApplicationEnvironment() {
+    public JavaCoreApplicationEnvironment getJavaApplicationEnvironment() {
         return applicationEnvironment;
     }
     
