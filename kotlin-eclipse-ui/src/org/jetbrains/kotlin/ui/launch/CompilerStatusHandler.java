@@ -90,6 +90,10 @@ public class CompilerStatusHandler implements IStatusHandler {
     }
     
     private void printlnToConsole(String message, RGB color, MessageConsole msgConsole) {
+        if (message == null) {
+            return;
+        }
+        
         MessageConsoleStream msgStream = msgConsole.newMessageStream();
         msgStream.setColor(new Color(null, color));
         
