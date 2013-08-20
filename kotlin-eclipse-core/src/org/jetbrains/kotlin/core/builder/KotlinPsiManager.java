@@ -1,9 +1,9 @@
 package org.jetbrains.kotlin.core.builder;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -16,6 +16,7 @@ import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IResourceDelta;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.IClasspathEntry;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
@@ -23,10 +24,16 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.plugin.JetFileType;
+import org.jetbrains.jet.plugin.JetLanguage;
 import org.jetbrains.kotlin.core.log.KotlinLogger;
-import org.jetbrains.kotlin.parser.KotlinParser;
+import org.jetbrains.kotlin.core.utils.KotlinEnvironment;
 
+import com.intellij.openapi.project.Project;
+import com.intellij.openapi.vfs.CharsetToolkit;
 import com.intellij.psi.PsiFile;
+import com.intellij.psi.PsiFileFactory;
+import com.intellij.psi.impl.PsiFileFactoryImpl;
+import com.intellij.testFramework.LightVirtualFile;
 
 public class KotlinPsiManager {
     
@@ -87,7 +94,8 @@ public class KotlinPsiManager {
                 projectFiles.put(project, new ArrayList<IFile>());
             }
             projectFiles.get(project).add(file);
-            psiFiles.put(file, KotlinParser.getPsiFile(file));
+            IJavaProject javaProject = JavaCore.create(file.getProject());
+            psiFiles.put(file, KotlinEnvironment.getEnvironmentLazy(javaProject).getJetFile(file));
         }
     }
     
@@ -108,14 +116,36 @@ public class KotlinPsiManager {
             assert psiFiles.containsKey(file) : "File(" + file.getName() + ") does not contain in the psiFiles";
             
             PsiFile parsedFile;
-            if (sourceCode != null) {
-                parsedFile = parseText(sourceCode, JavaCore.create(file.getProject()));
-            } else {
-                parsedFile = KotlinParser.getPsiFile(file);
+            if (sourceCode == null) {
+                sourceCode = getContents(file);
             }
+            
+            assert sourceCode != null;
+            
+            parsedFile = parseText(sourceCode, file);
             
             psiFiles.put(file, parsedFile);
         }
+    }
+    
+    @Nullable
+    private String getContents(@NotNull IFile file) {
+        StringBuilder content = new StringBuilder();
+        try {
+            DataInputStream inputStream = new DataInputStream(file.getContents());
+            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
+            String line = null;
+            while ((line = br.readLine()) != null) {
+                content.append(line).append("\n");
+            }
+            
+        } catch (CoreException e) {
+            KotlinLogger.logAndThrow(e);
+        } catch (IOException e) {
+            KotlinLogger.logAndThrow(e);
+        }
+        
+        return content.toString();
     }
     
     @NotNull
@@ -193,21 +223,16 @@ public class KotlinPsiManager {
         return false;
     }
     
-    @NotNull
-    private PsiFile parseText(@NotNull String text, IJavaProject javaProject) {
-        try {
-            File tempFile;
-            tempFile = File.createTempFile("temp", "." + JetFileType.INSTANCE.getDefaultExtension());
-            BufferedWriter bw = new BufferedWriter(new FileWriter(tempFile));
-            bw.write(text);
-            bw.close();
+    @Nullable
+    private PsiFile parseText(@NotNull String text, IFile file) {
+        synchronized (mapOperationLock) {
+            String fileName = file.getRawLocation().toOSString();
+            LightVirtualFile virtualFile = new LightVirtualFile(fileName, JetLanguage.INSTANCE, text);
+            virtualFile.setCharset(CharsetToolkit.UTF8_CHARSET);
             
-            PsiFile parsedFile = KotlinParser.getPsiFile(tempFile, javaProject);
-            
-            return parsedFile;
-        } catch (IOException e) {
-            KotlinLogger.logError(e);
-            throw new IllegalStateException(e);
+            IJavaProject javaProject = JavaCore.create(file.getProject());
+            Project project = KotlinEnvironment.getCachedIdeaProject(javaProject);
+            return ((PsiFileFactoryImpl) PsiFileFactory.getInstance(project)).trySetupPsiForFile(virtualFile, JetLanguage.INSTANCE, true, false);
         }
     }
 }

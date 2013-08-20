@@ -45,7 +45,7 @@ public class KotlinEnvironment {
         }
     };
     
-    private static final Map<IJavaProject, KotlinEnvironment> cachedEnvironmentForTempFiles = new HashMap<>();
+    private static final Map<IJavaProject, KotlinEnvironment> cachedEnvironment = new HashMap<>();
     
     private final JavaCoreApplicationEnvironment applicationEnvironment;
     private final JavaCoreProjectEnvironment projectEnvironment;
@@ -54,7 +54,7 @@ public class KotlinEnvironment {
     
     private static final Object cacheEnvironmentLock = new Object();
     
-    public KotlinEnvironment(@NotNull IJavaProject javaProject) {
+    private KotlinEnvironment(@NotNull IJavaProject javaProject) {
         this.javaProject = javaProject;
         
         applicationEnvironment = createJavaCoreApplicationEnvironment();
@@ -75,21 +75,40 @@ public class KotlinEnvironment {
         addLibsToClasspath();
         
         synchronized (cacheEnvironmentLock) {
-            cachedEnvironmentForTempFiles.put(javaProject, this);   
+            cachedEnvironment.put(javaProject, this);   
         }
     }
     
     @NotNull
-    public static KotlinEnvironment getEnvironmentForTempFile(IJavaProject javaProject) {
+    public static KotlinEnvironment getEnvironmentLazy(IJavaProject javaProject) {
         synchronized (cacheEnvironmentLock) {
-            if (!cachedEnvironmentForTempFiles.containsKey(javaProject)) {
-                cachedEnvironmentForTempFiles.put(javaProject, new KotlinEnvironment(javaProject));
+            if (!cachedEnvironment.containsKey(javaProject)) {
+                cachedEnvironment.put(javaProject, new KotlinEnvironment(javaProject));
             }
             
-            return cachedEnvironmentForTempFiles.get(javaProject);
+            return cachedEnvironment.get(javaProject);
         }            
     }
     
+    public static Project getCachedIdeaProject(IJavaProject javaProject) {
+        synchronized (cacheEnvironmentLock) {
+            return getEnvironmentLazy(javaProject).getProject();
+        }
+    }
+    
+    @Nullable
+    public JetFile getJetFile(@NotNull IFile file) {
+        return getJetFile(new File(file.getRawLocation().toOSString()));
+    }
+    
+    @Nullable
+    public JetFile getJetFile(@NotNull File file) {
+        String path = file.getAbsolutePath();
+        VirtualFile fileByPath = applicationEnvironment.getLocalFileSystem().findFileByPath(path);
+        
+        return (JetFile) PsiManager.getInstance(project).findFile(fileByPath);
+    }
+
     private JavaCoreApplicationEnvironment createJavaCoreApplicationEnvironment() {
         JavaCoreApplicationEnvironment javaApplicationEnvironment = new JavaCoreApplicationEnvironment(DISPOSABLE);
         
@@ -158,19 +177,6 @@ public class KotlinEnvironment {
         } catch (CoreException e) {
             KotlinLogger.logAndThrow(e);
         }
-    }
-    
-    @Nullable
-    public JetFile getJetFile(@NotNull IFile file) {
-        return getJetFile(new File(file.getRawLocation().toOSString()));
-    }
-    
-    @Nullable
-    public JetFile getJetFile(@NotNull File file) {
-        String path = file.getAbsolutePath();
-        VirtualFile fileByPath = applicationEnvironment.getLocalFileSystem().findFileByPath(path);
-        
-        return (JetFile) PsiManager.getInstance(project).findFile(fileByPath);
     }
     
     @NotNull

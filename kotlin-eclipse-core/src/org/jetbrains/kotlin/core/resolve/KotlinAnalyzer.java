@@ -23,7 +23,8 @@ public class KotlinAnalyzer {
 
     @NotNull
     public static BindingContext analyzeProject(@NotNull IJavaProject javaProject) {
-        KotlinEnvironment kotlinEnvironment = new KotlinEnvironment(javaProject);
+//        KotlinEnvironment kotlinEnvironment = new KotlinEnvironment(javaProject);
+        KotlinEnvironment kotlinEnvironment = KotlinEnvironment.getEnvironmentLazy(javaProject);
         return analyzeProject(javaProject, kotlinEnvironment);
     }
     
@@ -44,7 +45,8 @@ public class KotlinAnalyzer {
     public static List<JetFile> getSourceFiles(@NotNull IProject project, @NotNull KotlinEnvironment kotlinEnvironment) {
         List<JetFile> jetFiles = new ArrayList<JetFile>();
         for (IFile file : KotlinPsiManager.INSTANCE.getFilesByProject(project)) {
-            JetFile jetFile = kotlinEnvironment.getJetFile(file);
+            JetFile jetFile = (JetFile) KotlinPsiManager.INSTANCE.getParsedFile(file);
+//            JetFile jetFile = kotlinEnvironment.getJetFile(file);
             jetFiles.add(jetFile);
          }
         

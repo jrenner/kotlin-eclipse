@@ -63,6 +63,7 @@ public class DiagnosticAnnotationUtil {
         List<TextRange> ranges = diagnostic.getTextRanges();
         String text = diagnostic.getPsiFile().getText();
         
+//        int offset = ranges.get(0).getStartOffset();
         int offset = LineEndUtil.convertLfToOsOffset(text, ranges.get(0).getStartOffset());
         int length = ranges.get(0).getLength();
         
