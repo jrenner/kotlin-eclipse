@@ -19,7 +19,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
-import org.jetbrains.kotlin.parser.KotlinParser;
+import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
 import org.jetbrains.kotlin.utils.LineEndUtil;
 
 import com.intellij.lang.ASTNode;
@@ -65,8 +65,7 @@ public final class VisualizationPage extends Dialog {
         psiTreeViewer.setContentProvider(new PsiContentProvider());
         psiTreeViewer.setLabelProvider(new LabelProvider());
         
-        KotlinParser parser = new KotlinParser(file);
-        ASTNode parsedAst = parser.parse();
+        ASTNode parsedAst = KotlinPsiManager.INSTANCE.getParsedFile(file).getNode();
         psiTreeViewer.setInput(parsedAst);
         
         final String parsedText = parsedAst.getText();

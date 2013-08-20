@@ -7,14 +7,14 @@ import java.util.Set;
 import org.jetbrains.jet.lexer.JetTokens;
 import org.jetbrains.kotlin.utils.IndenterUtil;
 
-import com.intellij.lang.ASTNode;
 import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.impl.source.tree.LeafPsiElement;
 import com.intellij.psi.tree.IElementType;
 
 public class AlignmentStrategy {
     
-    private final ASTNode parsedFile;
+    private final PsiFile parsedFile;
     private StringBuilder edit;
     
     public static final Set<String> blockElementTypes;
@@ -23,7 +23,7 @@ public class AlignmentStrategy {
         blockElementTypes = new HashSet<String>(Arrays.asList("IF", "FOR", "WHILE", "FUN", "CLASS", "FUNCTION_LITERAL_EXPRESSION", "PROPERTY", "WHEN"));
     }
     
-    public AlignmentStrategy(ASTNode parsedFile) {
+    public AlignmentStrategy(PsiFile parsedFile) {
         this.parsedFile = parsedFile;
     }
     
@@ -34,25 +34,23 @@ public class AlignmentStrategy {
         return edit.toString();
     }
     
-    public static String alignCode(ASTNode parsedFile) {
+    public static String alignCode(PsiFile parsedFile) {
         return new AlignmentStrategy(parsedFile).placeSpaces();
     }
     
-    private void buildFormattedCode(ASTNode node, int indent) {
+    private void buildFormattedCode(PsiElement node, int indent) {
         indent = updateIndent(node, indent);
-        for (ASTNode child : node.getChildren(null)) {
-            PsiElement psiElement = child.getPsi();
-            
-            if (psiElement instanceof LeafPsiElement) {
-                if (IndenterUtil.isNewLine((LeafPsiElement) psiElement)) {
+        for (PsiElement child : node.getChildren()) {
+            if (child instanceof LeafPsiElement) {
+                if (IndenterUtil.isNewLine((LeafPsiElement) child)) {
                     int shift = indent;
-                    if (isBrace(psiElement.getNextSibling())) {
+                    if (isBrace(child.getNextSibling())) {
                         shift--;
                     }
                     
-                    edit.append(IndenterUtil.createWhiteSpace(shift, IndenterUtil.getLineSeparatorsOccurences(psiElement.getText())));
+                    edit.append(IndenterUtil.createWhiteSpace(shift, IndenterUtil.getLineSeparatorsOccurences(child.getText())));
                 } else {
-                    edit.append(psiElement.getText());
+                    edit.append(child.getText());
                 }
             }
             buildFormattedCode(child, indent);
@@ -81,8 +79,8 @@ public class AlignmentStrategy {
         }
     }
     
-    private int updateIndent(ASTNode node, int curIndent) {
-        if (blockElementTypes.contains(node.getElementType().toString())) {
+    private int updateIndent(PsiElement node, int curIndent) {
+        if (blockElementTypes.contains(node.getNode().getElementType().toString())) {
             return curIndent + 1;
         } 
         
