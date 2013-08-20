@@ -100,7 +100,7 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
         DebugUITools.launch(configuration, mode);
     }
     
-    private ILaunchConfiguration createConfiguration(IFile file) {
+    public ILaunchConfiguration createConfiguration(IFile file) {
         ILaunchConfiguration configuration = null;
         ILaunchConfigurationWorkingCopy configWC = null;
         ILaunchConfigurationType configurationType = getLaunchConfigurationType();
