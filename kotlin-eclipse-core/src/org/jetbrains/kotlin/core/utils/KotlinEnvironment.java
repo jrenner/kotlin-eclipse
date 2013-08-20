@@ -104,9 +104,9 @@ public class KotlinEnvironment {
     @Nullable
     public JetFile getJetFile(@NotNull File file) {
         String path = file.getAbsolutePath();
-        VirtualFile fileByPath = applicationEnvironment.getLocalFileSystem().findFileByPath(path);
+        VirtualFile virtualFile = applicationEnvironment.getLocalFileSystem().findFileByPath(path);
         
-        return (JetFile) PsiManager.getInstance(project).findFile(fileByPath);
+        return (JetFile) PsiManager.getInstance(project).findFile(virtualFile);
     }
 
     private JavaCoreApplicationEnvironment createJavaCoreApplicationEnvironment() {

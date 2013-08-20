@@ -1,7 +1,6 @@
 package org.jetbrains.kotlin.core.builder;
 
 import java.io.BufferedReader;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
@@ -54,7 +53,7 @@ public class KotlinPsiManager {
                 break;
                 
             case IResourceDelta.CHANGED:
-                updatePsiFile(file, null);
+                //updatePsiFile(file, null);
                 break;
                 
             case IResourceDelta.REMOVED:
@@ -79,7 +78,7 @@ public class KotlinPsiManager {
             List<IFile> files = getFilesByProject(project);
             projectFiles.remove(project);
             for (IFile file : files) {
-                psiFiles.remove(file);
+                removeFile(file);
             }
         }
     }
@@ -132,11 +131,10 @@ public class KotlinPsiManager {
     private String getContents(@NotNull IFile file) {
         StringBuilder content = new StringBuilder();
         try {
-            DataInputStream inputStream = new DataInputStream(file.getContents());
-            BufferedReader br = new BufferedReader(new InputStreamReader(inputStream));
-            String line = null;
+            BufferedReader br = new BufferedReader(new InputStreamReader(file.getContents()));
+            String line;
             while ((line = br.readLine()) != null) {
-                content.append(line).append("\n");
+                content.append(line);
             }
             
         } catch (CoreException e) {
@@ -232,6 +230,7 @@ public class KotlinPsiManager {
             
             IJavaProject javaProject = JavaCore.create(file.getProject());
             Project project = KotlinEnvironment.getCachedIdeaProject(javaProject);
+            
             return ((PsiFileFactoryImpl) PsiFileFactory.getInstance(project)).trySetupPsiForFile(virtualFile, JetLanguage.INSTANCE, true, false);
         }
     }

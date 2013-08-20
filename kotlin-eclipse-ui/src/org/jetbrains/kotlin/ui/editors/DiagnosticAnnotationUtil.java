@@ -44,8 +44,8 @@ public class DiagnosticAnnotationUtil {
                 continue;
             }
             
-            IFile curFile = ResourcesPlugin.getWorkspace().getRoot().
-                    getFileForLocation(new Path(virtualFile.getPath()));
+            String path = virtualFile.getPath();
+            IFile curFile = ResourcesPlugin.getWorkspace().getRoot().getFileForLocation(new Path(path));
             
             if (!annotations.containsKey(curFile)) {
                 annotations.put(curFile, new ArrayList<DiagnosticAnnotation>());

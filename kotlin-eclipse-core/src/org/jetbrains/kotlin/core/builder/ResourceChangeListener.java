@@ -10,7 +10,7 @@ public class ResourceChangeListener implements IResourceChangeListener {
     @Override
     public void resourceChanged(IResourceChangeEvent event) {
         switch (event.getType()) {
-            case IResourceChangeEvent.POST_CHANGE:
+            case IResourceChangeEvent.PRE_DELETE: case IResourceChangeEvent.POST_CHANGE:
                 try {
                     event.getDelta().accept(new ProjectChangeListener());
                 } catch (CoreException e) {
