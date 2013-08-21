@@ -53,7 +53,7 @@ public class KotlinPsiManager {
                 break;
                 
             case IResourceDelta.CHANGED:
-                //updatePsiFile(file, null);
+                updatePsiFile(file, null);
                 break;
                 
             case IResourceDelta.REMOVED:
@@ -78,7 +78,7 @@ public class KotlinPsiManager {
             List<IFile> files = getFilesByProject(project);
             projectFiles.remove(project);
             for (IFile file : files) {
-                removeFile(file);
+                psiFiles.remove(file);
             }
         }
     }

@@ -22,6 +22,7 @@ public class KotlinOpenDeclarationTestCase extends KotlinEditorTestCase {
 		
 		refreshWorkspace();
 		joinBuildThread();
+		joinAnalyzerThread();
 		
     	testEditor.accelerateOpenDeclaration();
 

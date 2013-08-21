@@ -8,6 +8,7 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.ui.PlatformUI;
 import org.jetbrains.kotlin.testframework.utils.WorkspaceUtil;
+import org.jetbrains.kotlin.ui.editors.AnalyzerScheduler;
 import org.junit.After;
 import org.junit.Before;
 
@@ -86,6 +87,16 @@ public abstract class KotlinEditorTestCase {
 		while (true) {
 			try {
 				Job.getJobManager().join(ResourcesPlugin.FAMILY_AUTO_BUILD, null);
+				break;
+			} catch (OperationCanceledException | InterruptedException e) {
+			}
+		}
+	}
+	
+	public void joinAnalyzerThread() {
+		while (true) {
+			try {
+				Job.getJobManager().join(AnalyzerScheduler.FAMILY, null);
 				break;
 			} catch (OperationCanceledException | InterruptedException e) {
 			}

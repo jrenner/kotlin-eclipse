@@ -41,7 +41,6 @@ import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
 import org.jetbrains.kotlin.core.log.KotlinLogger;
 import org.jetbrains.kotlin.core.resolve.KotlinAnalyzer;
-import org.jetbrains.kotlin.core.utils.KotlinEnvironment;
 import org.jetbrains.kotlin.utils.EditorUtil;
 import org.jetbrains.kotlin.utils.LineEndUtil;
 
@@ -66,14 +65,11 @@ public class OpenDeclarationAction extends SelectionDispatchAction {
 
     @Override
     public void run(ITextSelection selection) {
-//        KotlinEnvironment kotlinEnvironment = new KotlinEnvironment(javaProject);
-        KotlinEnvironment kotlinEnvironment = KotlinEnvironment.getEnvironmentLazy(javaProject);
-        
         JetFile jetFile = (JetFile) KotlinPsiManager.INSTANCE.getParsedFile(file);
         assert jetFile != null;
         
         JetReferenceExpression expression = getSelectedExpression(jetFile, selection.getOffset());
-        PsiElement element = getTargetElement(kotlinEnvironment, expression);
+        PsiElement element = getTargetElement(expression);
         
         if (element == null) {
             return;
@@ -88,7 +84,7 @@ public class OpenDeclarationAction extends SelectionDispatchAction {
         }
     }
     
-    private PsiElement getTargetElement(KotlinEnvironment kotlinEnvironment, JetReferenceExpression expression) {
+    private PsiElement getTargetElement(JetReferenceExpression expression) {
         BindingContext bindingContext = KotlinAnalyzer.analyzeProject(javaProject);
         List<PsiElement> elements = BindingContextUtils.resolveToDeclarationPsiElements(bindingContext, expression);
         if (elements.size() > 1 || elements.isEmpty()) {

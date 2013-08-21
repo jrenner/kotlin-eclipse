@@ -114,4 +114,5 @@ Export-Package: com.google.common.base,
  com.intellij.navigation,
  com.intellij.psi.impl,
  com.intellij.testFramework,
- com.intellij.util.io
+ com.intellij.util.io,
+ com.intellij.lang.java

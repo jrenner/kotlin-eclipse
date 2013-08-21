@@ -23,18 +23,18 @@ public class KotlinAnalyzer {
 
     @NotNull
     public static BindingContext analyzeProject(@NotNull IJavaProject javaProject) {
-//        KotlinEnvironment kotlinEnvironment = new KotlinEnvironment(javaProject);
+        KotlinEnvironment.updateKotlinEnvironment(javaProject);
         KotlinEnvironment kotlinEnvironment = KotlinEnvironment.getEnvironmentLazy(javaProject);
         return analyzeProject(javaProject, kotlinEnvironment);
     }
     
     @NotNull
-    public static BindingContext analyzeProject(@NotNull IJavaProject javaProject, @NotNull KotlinEnvironment kotlinEnvironment) {
+    private static BindingContext analyzeProject(@NotNull IJavaProject javaProject, @NotNull KotlinEnvironment kotlinEnvironment) {
         // TODO: Do not initialize builtins for each analyze
         Project ideaProject = kotlinEnvironment.getProject();
         KotlinBuiltIns.initialize(ideaProject);
         
-        List<JetFile> sourceFiles = getSourceFiles(javaProject.getProject(), kotlinEnvironment);
+        List<JetFile> sourceFiles = getSourceFiles(javaProject.getProject());
         AnalyzeExhaust analyzeExhaust = AnalyzerFacadeForJVM.analyzeFilesWithJavaIntegration(
                 ideaProject, sourceFiles, null, Predicates.<PsiFile>alwaysTrue());
         
@@ -42,11 +42,10 @@ public class KotlinAnalyzer {
     }
     
     @NotNull
-    public static List<JetFile> getSourceFiles(@NotNull IProject project, @NotNull KotlinEnvironment kotlinEnvironment) {
+    public static List<JetFile> getSourceFiles(@NotNull IProject project) {
         List<JetFile> jetFiles = new ArrayList<JetFile>();
         for (IFile file : KotlinPsiManager.INSTANCE.getFilesByProject(project)) {
             JetFile jetFile = (JetFile) KotlinPsiManager.INSTANCE.getParsedFile(file);
-//            JetFile jetFile = kotlinEnvironment.getJetFile(file);
             jetFiles.add(jetFile);
          }
         
