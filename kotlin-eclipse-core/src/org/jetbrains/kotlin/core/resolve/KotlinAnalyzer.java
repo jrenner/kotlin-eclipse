@@ -23,7 +23,6 @@ public class KotlinAnalyzer {
 
     @NotNull
     public static BindingContext analyzeProject(@NotNull IJavaProject javaProject) {
-        KotlinEnvironment.updateKotlinEnvironment(javaProject);
         KotlinEnvironment kotlinEnvironment = KotlinEnvironment.getEnvironmentLazy(javaProject);
         return analyzeProject(javaProject, kotlinEnvironment);
     }

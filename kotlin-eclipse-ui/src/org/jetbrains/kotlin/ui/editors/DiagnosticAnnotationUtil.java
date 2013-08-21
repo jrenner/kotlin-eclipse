@@ -32,7 +32,8 @@ public class DiagnosticAnnotationUtil {
     private DiagnosticAnnotationUtil() {
     }
     
-    public Map<IFile, List<DiagnosticAnnotation>> handleDiagnostics(List<Diagnostic> diagnostics) {
+    @NotNull
+    public Map<IFile, List<DiagnosticAnnotation>> handleDiagnostics(@NotNull List<Diagnostic> diagnostics) {
         Map<IFile, List<DiagnosticAnnotation>> annotations = new HashMap<IFile, List<DiagnosticAnnotation>>();
         for (Diagnostic diagnostic : diagnostics) {
             if (diagnostic.getTextRanges().isEmpty()) {
@@ -63,7 +64,10 @@ public class DiagnosticAnnotationUtil {
         List<TextRange> ranges = diagnostic.getTextRanges();
         String text = diagnostic.getPsiFile().getText();
         
-        int offset = LineEndUtil.convertLfToOsOffset(text, ranges.get(0).getStartOffset());
+        int offset = ranges.get(0).getStartOffset();
+        if (!text.contains("\r")) {
+            offset = LineEndUtil.convertLfToOsOffset(text, ranges.get(0).getStartOffset());
+        }
         int length = ranges.get(0).getLength();
         
         String message = DefaultErrorMessages.RENDERER.render(diagnostic);
