@@ -1,6 +1,9 @@
 package org.jetbrains.kotlin.core.utils;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -108,7 +111,23 @@ public class KotlinEnvironment {
         
         return (JetFile) PsiManager.getInstance(project).findFile(virtualFile);
     }
-
+    
+    @Nullable
+    public JetFile parseText(@NotNull String text) {
+        try {
+            File tempFile;
+            tempFile = File.createTempFile("temp", "." + JetFileType.INSTANCE.getDefaultExtension());
+            BufferedWriter bw = new BufferedWriter(new FileWriter(tempFile));
+            bw.write(text);
+            bw.close();
+            
+            return getJetFile(tempFile);
+        } catch (IOException e) {
+            KotlinLogger.logError(e);
+            throw new IllegalStateException(e);
+        }
+    }
+    
     private JavaCoreApplicationEnvironment createJavaCoreApplicationEnvironment() {
         JavaCoreApplicationEnvironment javaApplicationEnvironment = new JavaCoreApplicationEnvironment(DISPOSABLE);
         
