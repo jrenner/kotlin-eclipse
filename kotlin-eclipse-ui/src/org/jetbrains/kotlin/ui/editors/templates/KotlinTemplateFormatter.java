@@ -142,7 +142,7 @@ public class KotlinTemplateFormatter {
     
     public void format(TemplateBuffer buffer, int lineIndentation, IJavaProject javaProject) { 
         VariableOffsetsTracker offsetsTracker = VariableOffsetsTracker.mark(buffer.getString(), buffer.getVariables());
-        JetFile parsedFile = KotlinEnvironment.getEnvironmentLazy(javaProject).parseText(offsetsTracker.getMarkedString());
+        JetFile parsedFile = KotlinEnvironment.getEnvironment(javaProject).parseText(offsetsTracker.getMarkedString());
         
         assert parsedFile != null;
 

@@ -36,6 +36,7 @@ import com.intellij.mock.MockProject;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
 
 public class KotlinEnvironment {
@@ -78,12 +79,12 @@ public class KotlinEnvironment {
         addLibsToClasspath();
         
         synchronized (cacheEnvironmentLock) {
-            cachedEnvironment.put(javaProject, this);   
+            cachedEnvironment.put(javaProject, this);
         }
     }
     
     @NotNull
-    public static KotlinEnvironment getEnvironmentLazy(IJavaProject javaProject) {
+    public static KotlinEnvironment getEnvironment(IJavaProject javaProject) {
         synchronized (cacheEnvironmentLock) {
             if (!cachedEnvironment.containsKey(javaProject)) {
                 cachedEnvironment.put(javaProject, new KotlinEnvironment(javaProject));
@@ -109,7 +110,12 @@ public class KotlinEnvironment {
         String path = file.getAbsolutePath();
         VirtualFile virtualFile = applicationEnvironment.getLocalFileSystem().findFileByPath(path);
         
-        return (JetFile) PsiManager.getInstance(project).findFile(virtualFile);
+        PsiFile psiFile = PsiManager.getInstance(project).findFile(virtualFile);
+        if (psiFile != null && psiFile instanceof JetFile) {
+            return (JetFile) psiFile;
+        }
+        
+        return null;
     }
     
     @Nullable
