@@ -6,7 +6,7 @@ public class KotlinOpenDeclarationTest extends KotlinOpenDeclarationTestCase {
 
 	@Test
 	public void navigateToKotlinMethodInOneFile() {
-		doTest("Test.kt", 
+		doTest("Test1.kt", 
 				"fun test1() = te<caret>st2()<br>" +
 				"fun test2() {}", 
 				
@@ -16,7 +16,7 @@ public class KotlinOpenDeclarationTest extends KotlinOpenDeclarationTestCase {
 	
 	@Test
 	public void navigateToKotlinMethodWithDefinedSignature() {
-		doTest("Test.kt",
+		doTest("Test2.kt",
 				"fun test1(x : Int) = te<caret>st2(x)<br>" +
 				"fun test2() {}<br>" +
 				"fun test2(a : Int) = {}", 
@@ -28,7 +28,7 @@ public class KotlinOpenDeclarationTest extends KotlinOpenDeclarationTestCase {
 	
 	@Test
 	public void navigateToJavaClass() {
-		doTest("Test.kt",
+		doTest("Test3.kt",
 				"package testing<br>" +
 				"fun test1() = So<caret>me()",
 				
@@ -39,7 +39,7 @@ public class KotlinOpenDeclarationTest extends KotlinOpenDeclarationTestCase {
 	
 	@Test
 	public void navigateToJavaMethod() {
-		doTest("Test.kt",
+		doTest("Test4.kt",
 				"package testing<br>" +
 				"fun test1() {<br>" +
 				"var a = Some1()<br>" +
@@ -56,7 +56,7 @@ public class KotlinOpenDeclarationTest extends KotlinOpenDeclarationTestCase {
 	
 	@Test
 	public void navigateToJavaStaticMethod() {
-		doTest("Test.kt",
+		doTest("Test5.kt",
 				"package testing<br>" +
 				"fun test1() = Some2.sta<caret>ticMethod()",
 				
