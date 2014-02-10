@@ -18,9 +18,18 @@ package org.jetbrains.kotlin.ui.editors.codeassist;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
+import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Assert;
+import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.core.runtime.jobs.IJobManager;
+import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
 import org.eclipse.jface.text.IRegion;
@@ -37,12 +46,27 @@ import org.eclipse.jface.text.templates.Template;
 import org.eclipse.jface.text.templates.TemplateContext;
 import org.eclipse.jface.text.templates.TemplateProposal;
 import org.eclipse.swt.graphics.Image;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.descriptors.ReceiverParameterDescriptor;
+import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
+import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.scopes.JetScope;
+import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
+import org.jetbrains.kotlin.core.log.KotlinLogger;
+import org.jetbrains.kotlin.ui.editors.AnalyzerScheduler;
 import org.jetbrains.kotlin.ui.editors.KeywordManager;
 import org.jetbrains.kotlin.ui.editors.templates.KotlinApplicableTemplateContext;
 import org.jetbrains.kotlin.ui.editors.templates.KotlinDocumentTemplateContext;
 import org.jetbrains.kotlin.ui.editors.templates.KotlinTemplateManager;
 import org.jetbrains.kotlin.utils.EditorUtil;
+import org.jetbrains.kotlin.utils.LineEndUtil;
+
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.util.PsiTreeUtil;
 
 public class CompletionProcessor implements IContentAssistProcessor, ICompletionListener {
      
@@ -91,8 +115,79 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         
         proposals.addAll(generateKeywordProposals(viewer, identOffset, offset, identifierPart));
         proposals.addAll(generateTemplateProposals(viewer, offset, identifierPart));
+        proposals.addAll(generateSimpleCompletionProposals(viewer, identOffset, identifierPart));
         
         return proposals.toArray(new ICompletionProposal[proposals.size()]);
+    }
+    
+    @NotNull
+    private Collection<ICompletionProposal> generateSimpleCompletionProposals(@NotNull ITextViewer viewer, int offset, @NotNull String identifierPart) {
+        String sourceCode = EditorUtil.getSourceCode(editor);
+        IFile file = EditorUtil.getFile(editor);
+        
+        JetFile jetFile = (JetFile) KotlinPsiManager.INSTANCE.getParsedFile(file, sourceCode);
+        int offsetWithourCr = LineEndUtil.convertCrToOsOffset(sourceCode, offset);
+        PsiElement psiElement = jetFile.findElementAt(offsetWithourCr);
+        
+        JetSimpleNameExpression expression = PsiTreeUtil.getParentOfType(psiElement, JetSimpleNameExpression.class);
+        
+        IJavaProject javaProject = JavaCore.create(file.getProject());
+        BindingContext context = analyzeProjectInForeground(javaProject);
+        
+        if (context == null) {
+            return Collections.emptyList();
+        }
+        
+        Set<DeclarationDescriptor> declarationDescriptors = getReferenceVariants(expression, context);
+        
+        List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+        for (DeclarationDescriptor descriptor : declarationDescriptors) {
+            String completion = descriptor.getName().asString();
+            int elementLength = psiElement.getTextLength();
+            
+            proposals.add(new CompletionProposal(completion, offset - elementLength, elementLength, completion.length()));
+        }
+        
+        return proposals;
+    }
+    
+    @Nullable
+    public static BindingContext analyzeProjectInForeground(IJavaProject javaProject) {
+        AnalyzerScheduler analyzer = new AnalyzerScheduler(javaProject);
+        analyzer.schedule();
+        
+        IJobManager jobManager = Job.getJobManager();
+        try {
+            jobManager.join(AnalyzerScheduler.FAMILY, null);
+        } catch (OperationCanceledException | InterruptedException e) {
+            KotlinLogger.logInfo(e.getMessage());
+            
+            return null;
+        }
+        
+        return analyzer.getContext();
+    }
+    
+    @NotNull
+    private Set<DeclarationDescriptor> getReferenceVariants(
+            @Nullable JetSimpleNameExpression expression,
+            @NotNull BindingContext context) {
+        JetScope resolutionScope = context.get(BindingContext.RESOLUTION_SCOPE, expression);
+        if (resolutionScope == null) {
+            return Collections.emptySet();
+        }
+        
+        Set<DeclarationDescriptor> descriptors = new HashSet<DeclarationDescriptor>();
+        
+        List<ReceiverParameterDescriptor> result = resolutionScope.getImplicitReceiversHierarchy();
+        for (ReceiverParameterDescriptor receiverDescriptor : result) {
+            JetType receiverType = receiverDescriptor.getType();
+            descriptors.addAll(receiverType.getMemberScope().getAllDescriptors());
+        }
+        
+        descriptors.addAll(resolutionScope.getAllDescriptors());
+        
+        return descriptors;
     }
     
     private Collection<ICompletionProposal> generateTemplateProposals(ITextViewer viewer, int offset, String identifierPart) {
@@ -154,12 +249,12 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
     private int getIdentifierStartOffset(String text, int offset) {
         int identStartOffset = offset;
         
-        while ((identStartOffset != 0) && Character.isUnicodeIdentifierPart(text.charAt(identStartOffset - 1))) {
+        while ((identStartOffset != 0) && 
+                (text.charAt(identStartOffset - 1) == '.' || Character.isUnicodeIdentifierPart(text.charAt(identStartOffset - 1)))) {
             identStartOffset--;
         }
         return identStartOffset;
     }
-    
     
     @Override
     public IContextInformation[] computeContextInformation(ITextViewer viewer, int offset) {
