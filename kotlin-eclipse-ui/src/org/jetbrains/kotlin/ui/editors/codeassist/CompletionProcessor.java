@@ -19,6 +19,7 @@ package org.jetbrains.kotlin.ui.editors.codeassist;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Assert;
@@ -42,6 +43,7 @@ import org.eclipse.jface.text.templates.TemplateProposal;
 import org.eclipse.swt.graphics.Image;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
@@ -55,6 +57,7 @@ import org.jetbrains.kotlin.ui.editors.templates.KotlinTemplateManager;
 import org.jetbrains.kotlin.utils.EditorUtil;
 import org.jetbrains.kotlin.utils.LineEndUtil;
 
+import com.google.common.collect.Sets;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 
@@ -105,33 +108,43 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         
         proposals.addAll(generateKeywordProposals(viewer, identOffset, offset, identifierPart));
         proposals.addAll(generateTemplateProposals(viewer, offset, identifierPart));
-        proposals.addAll(generateSimpleCompletionProposals(viewer, identOffset, identifierPart));
+        proposals.addAll(generateSimpleCompletionProposals(viewer, identOffset, offset, identifierPart));
         
         return proposals.toArray(new ICompletionProposal[proposals.size()]);
     }
     
     @NotNull
-    private Collection<ICompletionProposal> generateSimpleCompletionProposals(@NotNull ITextViewer viewer, int offset, @NotNull String identifierPart) {
+    private Collection<ICompletionProposal> generateSimpleCompletionProposals(@NotNull ITextViewer viewer, int identOffset, 
+            int offset, @NotNull String identifierPart) {
         String sourceCode = EditorUtil.getSourceCode(editor);
         IFile file = EditorUtil.getFile(editor);
         
         JetFile jetFile = (JetFile) KotlinPsiManager.INSTANCE.getParsedFile(file, sourceCode);
-        int offsetWithourCr = LineEndUtil.convertCrToOsOffset(sourceCode, offset);
+        
+        int offsetWithourCr = LineEndUtil.convertCrToOsOffset(sourceCode, identOffset);
         PsiElement psiElement = jetFile.findElementAt(offsetWithourCr);
         
-        JetSimpleNameExpression expression = PsiTreeUtil.getParentOfType(psiElement, JetSimpleNameExpression.class);
+        @SuppressWarnings("unchecked")
+        JetExpression simpleNameExpression = PsiTreeUtil.getParentOfType(psiElement, 
+                JetSimpleNameExpression.class);
         
         IJavaProject javaProject = JavaCore.create(file.getProject());
         BindingContext context = KotlinBuilder.analyzeProjectInForeground(javaProject);
         
-        Collection<DeclarationDescriptor> declarationDescriptors = KotlinCompletionContributor.getVariantsNoReceiver(expression, context);
+        Collection<DeclarationDescriptor> declarationDescriptors = KotlinCompletionContributor.getVariantsNoReceiver(simpleNameExpression, context);
         
-        List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+        Set<String> completionSet = Sets.newHashSet();
         for (DeclarationDescriptor descriptor : declarationDescriptors) {
             String completion = descriptor.getName().asString();
-            int elementLength = psiElement.getTextLength();
             
-            proposals.add(new CompletionProposal(completion, offset - elementLength, elementLength, completion.length()));
+            if (completion.startsWith(psiElement.getText())) {
+                completionSet.add(completion);
+            }
+        }
+        
+        List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+        for (String completion : completionSet) {
+            proposals.add(new CompletionProposal(completion, identOffset, offset - identOffset, completion.length()));
         }
         
         return proposals;

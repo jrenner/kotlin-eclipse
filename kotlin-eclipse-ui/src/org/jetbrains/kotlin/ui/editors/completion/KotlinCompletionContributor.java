@@ -10,7 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.CallableDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.ReceiverParameterDescriptor;
-import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
+import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.scopes.JetScope;
 import org.jetbrains.jet.lang.resolve.scopes.JetScopeUtils;
@@ -26,7 +26,7 @@ public class KotlinCompletionContributor {
     
     @NotNull
     public static Collection<DeclarationDescriptor> getVariantsNoReceiver(
-            @Nullable JetSimpleNameExpression expression,
+            @Nullable JetExpression expression,
             @NotNull BindingContext context) {
         JetScope resolutionScope = context.get(BindingContext.RESOLUTION_SCOPE, expression);
         if (resolutionScope == null) {
