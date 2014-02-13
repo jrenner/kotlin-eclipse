@@ -124,9 +124,7 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         int offsetWithourCr = LineEndUtil.convertCrToOsOffset(sourceCode, identOffset);
         PsiElement psiElement = jetFile.findElementAt(offsetWithourCr);
         
-        @SuppressWarnings("unchecked")
-        JetExpression simpleNameExpression = PsiTreeUtil.getParentOfType(psiElement, 
-                JetSimpleNameExpression.class);
+        JetExpression simpleNameExpression = PsiTreeUtil.getParentOfType(psiElement, JetSimpleNameExpression.class);
         
         IJavaProject javaProject = JavaCore.create(file.getProject());
         BindingContext context = KotlinBuilder.analyzeProjectInForeground(javaProject);
