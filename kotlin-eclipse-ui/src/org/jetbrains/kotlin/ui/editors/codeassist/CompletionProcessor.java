@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.Assert;
@@ -28,6 +27,8 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.internal.ui.JavaPluginImages;
 import org.eclipse.jdt.internal.ui.javaeditor.JavaEditor;
+import org.eclipse.jdt.ui.ISharedImages;
+import org.eclipse.jdt.ui.JavaUI;
 import org.eclipse.jface.text.IRegion;
 import org.eclipse.jface.text.ITextViewer;
 import org.eclipse.jface.text.Region;
@@ -43,10 +44,16 @@ import org.eclipse.jface.text.templates.TemplateContext;
 import org.eclipse.jface.text.templates.TemplateProposal;
 import org.eclipse.swt.graphics.Image;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
+import org.jetbrains.jet.lang.psi.JetClass;
 import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.jet.lang.psi.JetFunction;
+import org.jetbrains.jet.lang.psi.JetPackageDirective;
+import org.jetbrains.jet.lang.psi.JetProperty;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
 import org.jetbrains.kotlin.ui.builder.KotlinBuilder;
 import org.jetbrains.kotlin.ui.editors.KeywordManager;
@@ -57,7 +64,7 @@ import org.jetbrains.kotlin.ui.editors.templates.KotlinTemplateManager;
 import org.jetbrains.kotlin.utils.EditorUtil;
 import org.jetbrains.kotlin.utils.LineEndUtil;
 
-import com.google.common.collect.Sets;
+import com.google.common.collect.Lists;
 import com.intellij.psi.PsiElement;
 import com.intellij.psi.util.PsiTreeUtil;
 
@@ -116,18 +123,9 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
     @NotNull
     private Collection<ICompletionProposal> generateSimpleCompletionProposals(@NotNull ITextViewer viewer, int identOffset, 
             int offset, @NotNull String identifierPart) {
-        String sourceCode = EditorUtil.getSourceCode(editor);
-        sourceCode = new StringBuilder(sourceCode).insert(identOffset, "IntellijIdeaRulezzz").toString();
-        
         IFile file = EditorUtil.getFile(editor);
         
-        JetFile jetFile = (JetFile) KotlinPsiManager.INSTANCE.getParsedFile(file, sourceCode);
-        
-        int offsetWithourCr = LineEndUtil.convertCrToOsOffset(sourceCode, identOffset);
-        PsiElement psiElement = jetFile.findElementAt(offsetWithourCr);
-        
-        JetSimpleNameExpression simpleNameExpression = PsiTreeUtil.getParentOfType(psiElement, JetSimpleNameExpression.class);
-        
+        JetSimpleNameExpression simpleNameExpression = getSimpleNameExpression(file, identOffset);
         if (simpleNameExpression == null) {
             return Collections.emptyList();
         }
@@ -137,22 +135,55 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         
         Collection<DeclarationDescriptor> declarationDescriptors = KotlinCompletionContributor.getReferenceVariants(simpleNameExpression, context);
         
-        Set<String> completionSet = Sets.newHashSet();
-        String prefix = psiElement.getText().substring("IntellijIdeaRulezzz".length());
+        List<ICompletionProposal> proposals = Lists.newArrayList();
         for (DeclarationDescriptor descriptor : declarationDescriptors) {
             String completion = descriptor.getName().asString();
+            PsiElement psiElement = BindingContextUtils.descriptorToDeclaration(context, descriptor);
             
-            if (completion.startsWith(prefix)) {
-                completionSet.add(completion);
+            if (completion.startsWith(identifierPart)) {
+                proposals.add(new CompletionProposal(completion, identOffset, offset - identOffset, completion.length(), getImage(psiElement), null, null, null));
             }
         }
         
-        List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
-        for (String completion : completionSet) {
-            proposals.add(new CompletionProposal(completion, identOffset, offset - identOffset, completion.length()));
+        return proposals;
+    }
+    
+    @Nullable
+    private static Image getImage(@Nullable PsiElement element) {
+        if (element == null) return null;
+        
+        String imageName = null;
+        if (element instanceof JetClass) {
+            if (((JetClass) element).isTrait()) {
+                imageName = ISharedImages.IMG_OBJS_INTERFACE;
+            } else {
+                imageName = ISharedImages.IMG_OBJS_CLASS;
+            }
+        } else if (element instanceof JetPackageDirective) {
+            imageName = ISharedImages.IMG_OBJS_PACKAGE;
+        } else if (element instanceof JetFunction) {
+            imageName = ISharedImages.IMG_OBJS_PUBLIC;
+        } else if (element instanceof JetProperty) {
+            imageName = ISharedImages.IMG_FIELD_PUBLIC;
         }
         
-        return proposals;
+        if (imageName != null) {
+            return JavaUI.getSharedImages().getImage(imageName);
+        }
+        
+        return null;
+    }
+    
+    private JetSimpleNameExpression getSimpleNameExpression(IFile file, int identOffset) {
+        String sourceCode = EditorUtil.getSourceCode(editor);
+        String sourceCodeWithMarker = new StringBuilder(sourceCode).insert(identOffset, "IntellijIdeaRulezzz").toString();
+        
+        JetFile jetFile = (JetFile) KotlinPsiManager.INSTANCE.getParsedFile(file, sourceCodeWithMarker);
+        
+        int offsetWithourCr = LineEndUtil.convertCrToOsOffset(sourceCodeWithMarker, identOffset);
+        PsiElement psiElement = jetFile.findElementAt(offsetWithourCr);
+        
+        return PsiTreeUtil.getParentOfType(psiElement, JetSimpleNameExpression.class);
     }
     
     private Collection<ICompletionProposal> generateTemplateProposals(ITextViewer viewer, int offset, String identifierPart) {
