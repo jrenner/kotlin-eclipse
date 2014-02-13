@@ -18,6 +18,7 @@ package org.jetbrains.kotlin.ui.editors.codeassist;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
@@ -43,7 +44,6 @@ import org.eclipse.jface.text.templates.TemplateProposal;
 import org.eclipse.swt.graphics.Image;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.psi.JetExpression;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
@@ -117,6 +117,8 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
     private Collection<ICompletionProposal> generateSimpleCompletionProposals(@NotNull ITextViewer viewer, int identOffset, 
             int offset, @NotNull String identifierPart) {
         String sourceCode = EditorUtil.getSourceCode(editor);
+        sourceCode = new StringBuilder(sourceCode).insert(identOffset, "IntellijIdeaRulezzz").toString();
+        
         IFile file = EditorUtil.getFile(editor);
         
         JetFile jetFile = (JetFile) KotlinPsiManager.INSTANCE.getParsedFile(file, sourceCode);
@@ -124,18 +126,23 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         int offsetWithourCr = LineEndUtil.convertCrToOsOffset(sourceCode, identOffset);
         PsiElement psiElement = jetFile.findElementAt(offsetWithourCr);
         
-        JetExpression simpleNameExpression = PsiTreeUtil.getParentOfType(psiElement, JetSimpleNameExpression.class);
+        JetSimpleNameExpression simpleNameExpression = PsiTreeUtil.getParentOfType(psiElement, JetSimpleNameExpression.class);
+        
+        if (simpleNameExpression == null) {
+            return Collections.emptyList();
+        }
         
         IJavaProject javaProject = JavaCore.create(file.getProject());
         BindingContext context = KotlinBuilder.analyzeProjectInForeground(javaProject);
         
-        Collection<DeclarationDescriptor> declarationDescriptors = KotlinCompletionContributor.getVariantsNoReceiver(simpleNameExpression, context);
+        Collection<DeclarationDescriptor> declarationDescriptors = KotlinCompletionContributor.getReferenceVariants(simpleNameExpression, context);
         
         Set<String> completionSet = Sets.newHashSet();
+        String prefix = psiElement.getText().substring("IntellijIdeaRulezzz".length());
         for (DeclarationDescriptor descriptor : declarationDescriptors) {
             String completion = descriptor.getName().asString();
             
-            if (completion.startsWith(psiElement.getText())) {
+            if (completion.startsWith(prefix)) {
                 completionSet.add(completion);
             }
         }

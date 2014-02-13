@@ -85,6 +85,7 @@ public class KotlinEnvironment {
         this.javaProject = javaProject;
         
         applicationEnvironment = createJavaCoreApplicationEnvironment();
+        JavaCoreApplicationEnvironment.registerExtensionPoint(Extensions.getRootArea(), ClsCustomNavigationPolicy.EP_NAME, ClsCustomNavigationPolicy.class);
         
         projectEnvironment = new JavaCoreProjectEnvironment(DISPOSABLE, applicationEnvironment);
         
@@ -167,8 +168,6 @@ public class KotlinEnvironment {
         javaApplicationEnvironment.registerParserDefinition(new JetParserDefinition());
 
         javaApplicationEnvironment.getApplication().registerService(OperationModeProvider.class, new CompilerModeProvider());
-        
-        JavaCoreApplicationEnvironment.registerExtensionPoint(Extensions.getRootArea(), ClsCustomNavigationPolicy.EP_NAME, ClsCustomNavigationPolicy.class);
         
         return javaApplicationEnvironment;
     }

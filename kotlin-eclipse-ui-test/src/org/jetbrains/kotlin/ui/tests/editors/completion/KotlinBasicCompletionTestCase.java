@@ -30,9 +30,11 @@ public class KotlinBasicCompletionTestCase extends KotlinEditorTestCase {
 			actualProposals.add(proposal.getDisplayString());
 		}
 		
-		List<String> expectedProposals = ExpectedCompletionUtils.itemsShouldExist(fileText, ExpectedCompletionUtils.EXIST_LINE_PREFIX);
-		
+		List<String> expectedProposals = ExpectedCompletionUtils.itemsShouldExist(fileText);
 		assertExists(expectedProposals, actualProposals);
+		
+		List<String> unexpectedProposals = ExpectedCompletionUtils.itemsShouldAbsent(fileText);
+		assertNotExists(unexpectedProposals, actualProposals);
 	}
 	
 	private String getName(String testPath) {
@@ -50,7 +52,13 @@ public class KotlinBasicCompletionTestCase extends KotlinEditorTestCase {
 	
 	private void assertExists(List<String> itemsShouldExist, Set<String> actualItems) {
 		for (String itemShouldExist : itemsShouldExist) {
-			Assert.assertTrue(actualItems.contains(itemShouldExist));
+			Assert.assertTrue(actualItems.contains(itemShouldExist.trim()));
+		}
+	}
+	
+	private void assertNotExists(List<String> itemsShouldAbsent, Set<String> actualItems) {
+		for (String itemShouldAbsent : itemsShouldAbsent) {
+			Assert.assertFalse(actualItems.contains(itemShouldAbsent));
 		}
 	}
 }
