@@ -30,4 +30,5 @@ Import-Package: com.intellij.openapi.util,
  org.eclipse.swt.graphics,
  org.eclipse.ui,
  org.eclipse.ui.console,
- org.eclipse.ui.ide
+ org.eclipse.ui.ide,
+ com.intellij.openapi.util.io
