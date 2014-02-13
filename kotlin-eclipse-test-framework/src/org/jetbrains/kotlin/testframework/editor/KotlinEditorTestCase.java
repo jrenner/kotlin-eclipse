@@ -104,6 +104,10 @@ public abstract class KotlinEditorTestCase {
     	return resolveTestTags(text).replaceAll("<caret>", "");
     }
     
+    protected int getCaret() {
+		return testEditor.getEditor().getViewer().getTextWidget().getCaretOffset();
+	}
+    
 	public void createSourceFile(String referenceFileName, String referenceFile) {
 		referenceFile = removeTags(referenceFile);
 		try {
