@@ -45,15 +45,13 @@ import org.eclipse.jface.text.templates.TemplateProposal;
 import org.eclipse.swt.graphics.Image;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
-import org.jetbrains.jet.lang.psi.JetClass;
+import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
-import org.jetbrains.jet.lang.psi.JetFunction;
-import org.jetbrains.jet.lang.psi.JetPackageDirective;
-import org.jetbrains.jet.lang.psi.JetProperty;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.BindingContextUtils;
 import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
 import org.jetbrains.kotlin.ui.builder.KotlinBuilder;
 import org.jetbrains.kotlin.ui.editors.KeywordManager;
@@ -137,11 +135,11 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         
         List<ICompletionProposal> proposals = Lists.newArrayList();
         for (DeclarationDescriptor descriptor : declarationDescriptors) {
-            String completion = descriptor.getName().asString();
-            PsiElement psiElement = BindingContextUtils.descriptorToDeclaration(context, descriptor);
+            String completion = descriptor.getName().getIdentifier();
             
             if (completion.startsWith(identifierPart)) {
-                proposals.add(new CompletionProposal(completion, identOffset, offset - identOffset, completion.length(), getImage(psiElement), null, null, null));
+                Image image = getImage(descriptor);
+                proposals.add(new CompletionProposal(completion, identOffset, offset - identOffset, completion.length(), image, null, null, null));
             }
         }
         
@@ -149,29 +147,20 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
     }
     
     @Nullable
-    private static Image getImage(@Nullable PsiElement element) {
-        if (element == null) return null;
-        
-        String imageName = null;
-        if (element instanceof JetClass) {
-            if (((JetClass) element).isTrait()) {
-                imageName = ISharedImages.IMG_OBJS_INTERFACE;
-            } else {
-                imageName = ISharedImages.IMG_OBJS_CLASS;
-            }
-        } else if (element instanceof JetPackageDirective) {
-            imageName = ISharedImages.IMG_OBJS_PACKAGE;
-        } else if (element instanceof JetFunction) {
-            imageName = ISharedImages.IMG_OBJS_PUBLIC;
-        } else if (element instanceof JetProperty) {
-            imageName = ISharedImages.IMG_FIELD_PUBLIC;
-        }
-        
-        if (imageName != null) {
-            return JavaUI.getSharedImages().getImage(imageName);
+    private static Image getImage(@NotNull DeclarationDescriptor descriptor) {
+        if (descriptor instanceof ClassDescriptor) {
+            return getImageFromJavaUI(ISharedImages.IMG_OBJS_CLASS);
+        } else if (descriptor instanceof FunctionDescriptor) {
+            return getImageFromJavaUI(ISharedImages.IMG_OBJS_PUBLIC);
+        } else if (descriptor instanceof VariableDescriptor) {
+            return getImageFromJavaUI(ISharedImages.IMG_FIELD_PUBLIC);
         }
         
         return null;
+    }
+    
+    private static Image getImageFromJavaUI(@NotNull String imageName) {
+        return JavaUI.getSharedImages().getImage(imageName);
     }
     
     private JetSimpleNameExpression getSimpleNameExpression(IFile file, int identOffset) {
