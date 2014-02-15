@@ -343,5 +343,40 @@ public class KotlinBasicCompletionTest extends KotlinBasicCompletionTestCase {
 	public void testVisibilityInSubclassForce() {
 		doTest("testData/completion/basic/common/VisibilityInSubclassForce.kt");
 	}
-
+	
+    public void testAutoForceCompletion() throws Exception {
+        doTest("testData/completion/basic/java/AutoForceCompletion.kt");
+    }
+    
+    public void testExtensionFromStandardLibrary() throws Exception {
+        doTest("testData/completion/basic/java/ExtensionFromStandardLibrary.kt");
+    }
+    
+    public void testInPackage() throws Exception {
+        doTest("testData/completion/basic/java/InPackage.kt");
+    }
+    
+    public void testJavaClassNames() throws Exception {
+        doTest("testData/completion/basic/java/JavaClassNames.kt");
+    }
+    
+    public void testNoClassNameDuplicationForRuntimeClass() throws Exception {
+        doTest("testData/completion/basic/java/NoClassNameDuplicationForRuntimeClass.kt");
+    }
+    
+    public void testNoImportedJavaClassDuplication() throws Exception {
+        doTest("testData/completion/basic/java/NoImportedJavaClassDuplication.kt");
+    }
+    
+    public void testPropertyMetadata() throws Exception {
+        doTest("testData/completion/basic/java/PropertyMetadata.kt");
+    }
+    
+    public void testTopLevelFromStandardLibrary() throws Exception {
+        doTest("testData/completion/basic/java/TopLevelFromStandardLibrary.kt");
+    }
+    
+    public void testTopLevelFromStandardLibraryWithoutParam() throws Exception {
+        doTest("testData/completion/basic/java/TopLevelFromStandardLibraryWithoutParam.kt");
+    }
 }
