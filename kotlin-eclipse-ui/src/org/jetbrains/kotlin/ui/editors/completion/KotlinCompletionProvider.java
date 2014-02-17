@@ -35,7 +35,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.intellij.psi.PsiElement;
 
-public class KotlinCompletionContributor {
+public class KotlinCompletionProvider {
     
     //Source code is taken from org.jetbrains.jet.plugin.codeInsight.TipsManager
     @NotNull

@@ -57,7 +57,7 @@ import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
 import org.jetbrains.kotlin.ui.builder.KotlinBuilder;
 import org.jetbrains.kotlin.ui.editors.KeywordManager;
-import org.jetbrains.kotlin.ui.editors.completion.KotlinCompletionContributor;
+import org.jetbrains.kotlin.ui.editors.completion.KotlinCompletionProvider;
 import org.jetbrains.kotlin.ui.editors.templates.KotlinApplicableTemplateContext;
 import org.jetbrains.kotlin.ui.editors.templates.KotlinDocumentTemplateContext;
 import org.jetbrains.kotlin.ui.editors.templates.KotlinTemplateManager;
@@ -131,11 +131,12 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
     private List<ICompletionProposal> filterProposals(@NotNull List<ICompletionProposal> proposals, @NotNull String prefix, int identOffset) {
         List<ICompletionProposal> filteredProposals = Lists.newArrayList();
         for (ICompletionProposal proposal : proposals) {
-            if (proposal.getDisplayString().toLowerCase().startsWith(prefix.toLowerCase())) {
-                String displayString = proposal.getDisplayString();
-                String replacementString = proposal.getAdditionalProposalInfo() == null ? displayString : proposal.getAdditionalProposalInfo();
-                filteredProposals.add(
-                        new CompletionProposal(replacementString, identOffset, prefix.length(), replacementString.length(), proposal.getImage(), displayString, null, null));
+            String displayString = proposal.getDisplayString();
+            String replacementString = proposal.getAdditionalProposalInfo() == null ? displayString : proposal.getAdditionalProposalInfo();
+            
+            if (replacementString.startsWith(prefix) || replacementString.toLowerCase().startsWith(prefix)) {
+                filteredProposals.add(new CompletionProposal(replacementString, identOffset, prefix.length(), 
+                        replacementString.length(), proposal.getImage(), displayString, null, replacementString));
             }
         }
         
@@ -155,7 +156,7 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         IJavaProject javaProject = JavaCore.create(file.getProject());
         BindingContext context = KotlinBuilder.analyzeProjectInForeground(javaProject);
         
-        Collection<DeclarationDescriptor> declarationDescriptors = KotlinCompletionContributor.getReferenceVariants(simpleNameExpression, context);
+        Collection<DeclarationDescriptor> declarationDescriptors = KotlinCompletionProvider.getReferenceVariants(simpleNameExpression, context);
         
         List<ICompletionProposal> proposals = Lists.newArrayList();
         for (DeclarationDescriptor descriptor : declarationDescriptors) {
@@ -228,7 +229,7 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
     
     private JetSimpleNameExpression getSimpleNameExpression(IFile file, int identOffset) {
         String sourceCode = EditorUtil.getSourceCode(editor);
-        String sourceCodeWithMarker = new StringBuilder(sourceCode).insert(identOffset, "IntellijIdeaRulezzz").toString();
+        String sourceCodeWithMarker = new StringBuilder(sourceCode).insert(identOffset, "KotlinRulezzz").toString();
         
         JetFile jetFile = (JetFile) KotlinPsiManager.INSTANCE.getParsedFile(file, sourceCodeWithMarker);
         
@@ -274,10 +275,8 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
             int offset, String identifierPart) {
         List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
         if (!identifierPart.isEmpty()) {
-            if (identOffset == 0 || Character.isWhitespace(viewer.getDocument().get().charAt(identOffset - 1))) {
-                for (String keyword : KeywordManager.getAllKeywords()) {
-                    proposals.add(new CompletionProposal(keyword, identOffset, offset - identOffset, keyword.length()));
-                }
+            for (String keyword : KeywordManager.getAllKeywords()) {
+                proposals.add(new CompletionProposal(keyword, identOffset, offset - identOffset, keyword.length()));
             }
         }
         
@@ -337,7 +336,6 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
 
     @Override
     public void selectionChanged(ICompletionProposal proposal, boolean smartToggle) {
-        System.out.println("changed");
     }
 
 }

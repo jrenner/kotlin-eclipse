@@ -8,7 +8,6 @@ class SomeClass {
 // EXIST: SomeClass
 // EXIST: SomeInternal
 // EXIST: { lookupString:"String", tailText:" (jet)" }
-// EXIST: IllegalStateException
 // EXIST: StringBuilder
 // EXIST_JAVA_ONLY: StringBuffer
 // ABSENT: HTMLStyleElement

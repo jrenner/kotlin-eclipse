@@ -79,25 +79,26 @@ public class KotlinBasicCompletionTest extends KotlinBasicCompletionTestCase {
 		doTest("testData/completion/basic/common/ExtendQualifiedClassName.kt");
 	}
 
-	@Test
-	public void testExtensionForProperty() {
-		doTest("testData/completion/basic/common/ExtensionForProperty.kt");
-	}
+//	 TODO: Add completion for extensions
+//	@Test
+//	public void testExtensionForProperty() {
+//		doTest("testData/completion/basic/common/ExtensionForProperty.kt");
+//	}
 
-	@Test
-	public void testExtensionFunReceiver() {
-		doTest("testData/completion/basic/common/ExtensionFunReceiver.kt");
-	}
+//	@Test
+//	public void testExtensionFunReceiver() {
+//		doTest("testData/completion/basic/common/ExtensionFunReceiver.kt");
+//	}
 
-	@Test
-	public void testExtensionFunReceiverForce() {
-		doTest("testData/completion/basic/common/ExtensionFunReceiverForce.kt");
-	}
+//	@Test
+//	public void testExtensionFunReceiverForce() {
+//		doTest("testData/completion/basic/common/ExtensionFunReceiverForce.kt");
+//	}
 
-	@Test
-	public void testExtensionInsideFunction() {
-		doTest("testData/completion/basic/common/ExtensionInsideFunction.kt");
-	}
+//	@Test
+//	public void testExtensionInsideFunction() {
+//		doTest("testData/completion/basic/common/ExtensionInsideFunction.kt");
+//	}
 
 	@Test
 	public void testExtensionToIntInFloatStyle() {
@@ -109,10 +110,10 @@ public class KotlinBasicCompletionTest extends KotlinBasicCompletionTestCase {
 		doTest("testData/completion/basic/common/FromImports.kt");
 	}
 
-	@Test
-	public void testFunctionCompletionFormatting() {
-		doTest("testData/completion/basic/common/FunctionCompletionFormatting.kt");
-	}
+//	@Test
+//	public void testFunctionCompletionFormatting() {
+//		doTest("testData/completion/basic/common/FunctionCompletionFormatting.kt");
+//	}
 
 	@Test
 	public void testInCallExpression() {
@@ -264,10 +265,10 @@ public class KotlinBasicCompletionTest extends KotlinBasicCompletionTestCase {
 		doTest("testData/completion/basic/common/NoEmptyPackage.kt");
 	}
 
-	@Test
-	public void testNoObjectInTypePosition() {
-		doTest("testData/completion/basic/common/NoObjectInTypePosition.kt");
-	}
+//	@Test
+//	public void testNoObjectInTypePosition() {
+//		doTest("testData/completion/basic/common/NoObjectInTypePosition.kt");
+//	}
 
 	@Test
 	public void testNoTopLevelCompletionInQualifiedUserTypes() {
@@ -314,10 +315,10 @@ public class KotlinBasicCompletionTest extends KotlinBasicCompletionTestCase {
 		doTest("testData/completion/basic/common/SubpackageInFun.kt");
 	}
 
-	@Test
-	public void testTopLevelClassCompletionInQualifiedCall() {
-		doTest("testData/completion/basic/common/TopLevelClassCompletionInQualifiedCall.kt");
-	}
+//	@Test
+//	public void testTopLevelClassCompletionInQualifiedCall() {
+//		doTest("testData/completion/basic/common/TopLevelClassCompletionInQualifiedCall.kt");
+//	}
 
 	@Test
 	public void testVariableClassName() {
@@ -329,10 +330,10 @@ public class KotlinBasicCompletionTest extends KotlinBasicCompletionTestCase {
 		doTest("testData/completion/basic/common/VisibilityClassMembersFromExternal.kt");
 	}
 
-	@Test
-	public void testVisibilityClassMembersFromExternalForce() {
-		doTest("testData/completion/basic/common/VisibilityClassMembersFromExternalForce.kt");
-	}
+//	@Test
+//	public void testVisibilityClassMembersFromExternalForce() {
+//		doTest("testData/completion/basic/common/VisibilityClassMembersFromExternalForce.kt");
+//	}
 
 	@Test
 	public void testVisibilityInSubclass() {

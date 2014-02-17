@@ -27,7 +27,15 @@ public class KotlinBasicCompletionTestCase extends KotlinEditorTestCase {
 		
 		Set<String> actualProposals = new HashSet<String>();
 		for (ICompletionProposal proposal : proposals) {
-			actualProposals.add(proposal.getDisplayString());
+			String replacementString = proposal.getAdditionalProposalInfo();
+			if (replacementString == null) replacementString = proposal.getDisplayString();
+			
+			actualProposals.add(replacementString);
+		}
+		
+		Integer expectedNumber = ExpectedCompletionUtils.numberOfItemsShouldPresent(fileText);
+		if (expectedNumber != null) {
+			Assert.assertEquals(expectedNumber, new Integer(proposals.length));
 		}
 		
 		List<String> expectedProposals = ExpectedCompletionUtils.itemsShouldExist(fileText);
