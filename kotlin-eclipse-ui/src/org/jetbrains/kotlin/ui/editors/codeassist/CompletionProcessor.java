@@ -77,8 +77,8 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
     private static final char[] VALID_INFO_CHARS = new char[] { '(', ',' };
     
     private final JavaEditor editor;
-    private List<ICompletionProposal> proposals = Lists.newArrayList();
-    private final List<ICompletionProposal> cachedProposals = Lists.newArrayList();
+    private final List<ICompletionProposal> cachedCompletionProposals = Lists.newArrayList();
+    private boolean isNewSession = false;
     
     public CompletionProcessor(JavaEditor editor) {
         this.editor = editor;
@@ -113,22 +113,24 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         
         String identifierPart = fileText.substring(identOffset, offset);
         
-        if (proposals.isEmpty()) {
-            proposals.addAll(generateKeywordProposals(viewer, identOffset, offset, identifierPart));
-            proposals.addAll(generateTemplateProposals(viewer, offset, identifierPart));
-            proposals.addAll(generateSimpleCompletionProposals(viewer, identOffset, offset, identifierPart));
+        if (isNewSession) {
+            cachedCompletionProposals.clear();
+            cachedCompletionProposals.addAll(generateBasicCompletionProposals(viewer, identOffset, offset, identifierPart));
             
-            cachedProposals.clear();
-            cachedProposals.addAll(proposals);
+            isNewSession = false;
         }
         
-        proposals = filterProposals(cachedProposals, identifierPart, identOffset);
+        List<ICompletionProposal> proposals = Lists.newArrayList();
+        
+        proposals.addAll(filterCompletionProposals(cachedCompletionProposals, identifierPart, identOffset));
+        proposals.addAll(generateKeywordProposals(viewer, identOffset, offset, identifierPart));
+        proposals.addAll(generateTemplateProposals(viewer, offset, identifierPart));
         
         return proposals.toArray(new ICompletionProposal[proposals.size()]);
     }
     
     @NotNull
-    private List<ICompletionProposal> filterProposals(@NotNull List<ICompletionProposal> proposals, @NotNull String prefix, int identOffset) {
+    private List<ICompletionProposal> filterCompletionProposals(@NotNull List<ICompletionProposal> proposals, @NotNull String prefix, int identOffset) {
         List<ICompletionProposal> filteredProposals = Lists.newArrayList();
         for (ICompletionProposal proposal : proposals) {
             String displayString = proposal.getDisplayString();
@@ -144,7 +146,7 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
     }
     
     @NotNull
-    private Collection<ICompletionProposal> generateSimpleCompletionProposals(@NotNull ITextViewer viewer, int identOffset, 
+    private Collection<ICompletionProposal> generateBasicCompletionProposals(@NotNull ITextViewer viewer, int identOffset, 
             int offset, @NotNull String identifierPart) {
         IFile file = EditorUtil.getFile(editor);
         
@@ -249,8 +251,10 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         
         List<Template> templates = KotlinApplicableTemplateContext.getTemplatesByContextTypeIds(contextTypeIds);
         for (Template template : templates) {
-            TemplateContext templateContext = createTemplateContext(region, template.getContextTypeId());
-            proposals.add(new TemplateProposal(template, templateContext, region, templateIcon));
+            if (template.getName().startsWith(identifierPart)) {
+                TemplateContext templateContext = createTemplateContext(region, template.getContextTypeId());
+                proposals.add(new TemplateProposal(template, templateContext, region, templateIcon));
+            }
         }
         
         return proposals;
@@ -275,11 +279,14 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
             int offset, String identifierPart) {
         List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
         if (!identifierPart.isEmpty()) {
-            for (String keyword : KeywordManager.getAllKeywords()) {
-                proposals.add(new CompletionProposal(keyword, identOffset, offset - identOffset, keyword.length()));
+            if (identOffset == 0 || Character.isWhitespace(viewer.getDocument().get().charAt(identOffset - 1))) {
+                for (String keyword : KeywordManager.getAllKeywords()) {
+                    if (keyword.startsWith(identifierPart)) {
+                        proposals.add(new CompletionProposal(keyword, identOffset, offset - identOffset, keyword.length()));
+                    }
+                }
             }
         }
-        
         return proposals;
     }
 
@@ -327,7 +334,7 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
 
     @Override
     public void assistSessionStarted(ContentAssistEvent event) {
-        proposals.clear();
+        isNewSession = true;
     }
 
     @Override
