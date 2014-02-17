@@ -9,7 +9,5 @@ fun test() {
     Some().<caret>
 }
 
-// INVOCATION_COUNT: 1
-// EXIST: testPublic, testPackage
-// ABSENT: testPrivate, testProtected
+// EXIST: testPublic, testPackage, testPrivate, testProtected
 

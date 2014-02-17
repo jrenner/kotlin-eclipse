@@ -300,10 +300,10 @@ public class KotlinBasicCompletionTest extends KotlinBasicCompletionTestCase {
 		doTest("testData/completion/basic/common/ShortClassNamesInTypePosition.kt");
 	}
 
-	@Test
-	public void testStandardJetArrayFirst() {
-		doTest("testData/completion/basic/common/StandardJetArrayFirst.kt");
-	}
+//	@Test
+//	public void testStandardJetArrayFirst() {
+//		doTest("testData/completion/basic/common/StandardJetArrayFirst.kt");
+//	}
 
 	@Test
 	public void testStandardJetDoubleFirst() {
