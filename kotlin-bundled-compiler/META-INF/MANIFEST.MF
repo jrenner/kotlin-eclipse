@@ -105,4 +105,6 @@ Export-Package: com.google.common.base,
  org.jetbrains.jet.util,
  org.jetbrains.jet.util.slicedmap,
  org.jetbrains.jet.utils,
- org.jetbrains.jet.descriptors.serialization.descriptors
+ org.jetbrains.jet.descriptors.serialization.descriptors,
+ com.intellij.psi.augment,
+ com.intellij.psi.impl.compiled

@@ -78,7 +78,7 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
     
     private final JavaEditor editor;
     private final List<ICompletionProposal> cachedCompletionProposals = Lists.newArrayList();
-    private boolean isNewSession = false;
+    private boolean isNewSession = true;
     
     public CompletionProcessor(JavaEditor editor) {
         this.editor = editor;
@@ -113,7 +113,7 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         
         String identifierPart = fileText.substring(identOffset, offset);
         
-        if (isNewSession) {
+        if (isNewSession || cachedCompletionProposals.isEmpty()) {
             cachedCompletionProposals.clear();
             cachedCompletionProposals.addAll(generateBasicCompletionProposals(viewer, identOffset, offset, identifierPart));
             

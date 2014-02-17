@@ -22,6 +22,8 @@ public class KotlinBasicCompletionTestCase extends KotlinEditorTestCase {
 		String fileText = getText(testPath);
 		testEditor = configureEditor(getName(testPath), fileText);
 		
+		joinBuildThread();
+		
 		CompletionProcessor ktCompletionProcessor = new CompletionProcessor(testEditor.getEditor());
 		ICompletionProposal[] proposals = ktCompletionProcessor.computeCompletionProposals(testEditor.getEditor().getViewer(), getCaret());
 		
