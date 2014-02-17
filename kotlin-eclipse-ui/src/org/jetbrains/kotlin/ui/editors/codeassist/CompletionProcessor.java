@@ -48,10 +48,12 @@ import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.descriptors.ClassDescriptor;
 import org.jetbrains.jet.lang.descriptors.DeclarationDescriptor;
 import org.jetbrains.jet.lang.descriptors.FunctionDescriptor;
+import org.jetbrains.jet.lang.descriptors.ValueParameterDescriptor;
 import org.jetbrains.jet.lang.descriptors.VariableDescriptor;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.psi.JetSimpleNameExpression;
 import org.jetbrains.jet.lang.resolve.BindingContext;
+import org.jetbrains.jet.lang.types.JetType;
 import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
 import org.jetbrains.kotlin.ui.builder.KotlinBuilder;
 import org.jetbrains.kotlin.ui.editors.KeywordManager;
@@ -75,6 +77,8 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
     private static final char[] VALID_INFO_CHARS = new char[] { '(', ',' };
     
     private final JavaEditor editor;
+    private List<ICompletionProposal> proposals = Lists.newArrayList();
+    private final List<ICompletionProposal> cachedProposals = Lists.newArrayList();
     
     public CompletionProcessor(JavaEditor editor) {
         this.editor = editor;
@@ -109,13 +113,33 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         
         String identifierPart = fileText.substring(identOffset, offset);
         
-        List<ICompletionProposal> proposals = new ArrayList<ICompletionProposal>();
+        if (proposals.isEmpty()) {
+            proposals.addAll(generateKeywordProposals(viewer, identOffset, offset, identifierPart));
+            proposals.addAll(generateTemplateProposals(viewer, offset, identifierPart));
+            proposals.addAll(generateSimpleCompletionProposals(viewer, identOffset, offset, identifierPart));
+            
+            cachedProposals.clear();
+            cachedProposals.addAll(proposals);
+        }
         
-        proposals.addAll(generateKeywordProposals(viewer, identOffset, offset, identifierPart));
-        proposals.addAll(generateTemplateProposals(viewer, offset, identifierPart));
-        proposals.addAll(generateSimpleCompletionProposals(viewer, identOffset, offset, identifierPart));
+        proposals = filterProposals(cachedProposals, identifierPart, identOffset);
         
         return proposals.toArray(new ICompletionProposal[proposals.size()]);
+    }
+    
+    @NotNull
+    private List<ICompletionProposal> filterProposals(@NotNull List<ICompletionProposal> proposals, @NotNull String prefix, int identOffset) {
+        List<ICompletionProposal> filteredProposals = Lists.newArrayList();
+        for (ICompletionProposal proposal : proposals) {
+            if (proposal.getDisplayString().toLowerCase().startsWith(prefix.toLowerCase())) {
+                String displayString = proposal.getDisplayString();
+                String replacementString = proposal.getAdditionalProposalInfo() == null ? displayString : proposal.getAdditionalProposalInfo();
+                filteredProposals.add(
+                        new CompletionProposal(replacementString, identOffset, prefix.length(), replacementString.length(), proposal.getImage(), displayString, null, null));
+            }
+        }
+        
+        return filteredProposals;
     }
     
     @NotNull
@@ -137,13 +161,52 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         for (DeclarationDescriptor descriptor : declarationDescriptors) {
             String completion = descriptor.getName().getIdentifier();
             
-            if (completion.startsWith(identifierPart)) {
-                Image image = getImage(descriptor);
-                proposals.add(new CompletionProposal(completion, identOffset, offset - identOffset, completion.length(), image, null, null, null));
-            }
+            Image image = getImage(descriptor);
+            String displayString = getDisplayString(descriptor);
+            proposals.add(new CompletionProposal(completion, identOffset, offset - identOffset, completion.length(), image, displayString, null, completion));
         }
         
         return proposals;
+    }
+    
+    private static String getDisplayString(@NotNull DeclarationDescriptor descriptor) {
+        String identifier = descriptor.getName().getIdentifier();
+        
+        if (descriptor instanceof ClassDescriptor) {
+            ClassDescriptor classDescriptor = (ClassDescriptor) descriptor;
+            classDescriptor.getName().asString();
+        } else if (descriptor instanceof FunctionDescriptor) {
+            FunctionDescriptor functionDescriptor = (FunctionDescriptor) descriptor;
+            functionDescriptor.getValueParameters().toString();
+
+            StringBuilder funSignature = new StringBuilder(identifier);
+            funSignature.append("(");
+            for (ValueParameterDescriptor parameter : functionDescriptor.getValueParameters()) {
+                funSignature.append(parameter.getName().getIdentifier());
+                funSignature.append(":");
+                funSignature.append(parameter.getType().toString());
+                funSignature.append(", ");
+            }
+            
+            if (functionDescriptor.getValueParameters().size() > 0) {
+                funSignature.delete(funSignature.length() - 2, funSignature.length());
+            }
+            
+            funSignature.append(")");
+            
+            JetType returnType = functionDescriptor.getReturnType();
+            if (returnType != null) {
+                funSignature.append(": ");
+                funSignature.append(returnType.toString());
+            }
+            
+            return funSignature.toString();
+        } else if (descriptor instanceof VariableDescriptor) {
+            VariableDescriptor variableDescriptor = (VariableDescriptor) descriptor;
+            return identifier + " : " + variableDescriptor.getType().toString();
+        }
+        
+        return identifier;
     }
     
     @Nullable
@@ -185,10 +248,8 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         
         List<Template> templates = KotlinApplicableTemplateContext.getTemplatesByContextTypeIds(contextTypeIds);
         for (Template template : templates) {
-            if (template.getName().startsWith(identifierPart)) {
-                TemplateContext templateContext = createTemplateContext(region, template.getContextTypeId());
-                proposals.add(new TemplateProposal(template, templateContext, region, templateIcon));
-            }
+            TemplateContext templateContext = createTemplateContext(region, template.getContextTypeId());
+            proposals.add(new TemplateProposal(template, templateContext, region, templateIcon));
         }
         
         return proposals;
@@ -215,12 +276,11 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
         if (!identifierPart.isEmpty()) {
             if (identOffset == 0 || Character.isWhitespace(viewer.getDocument().get().charAt(identOffset - 1))) {
                 for (String keyword : KeywordManager.getAllKeywords()) {
-                    if (keyword.startsWith(identifierPart)) {
-                        proposals.add(new CompletionProposal(keyword, identOffset, offset - identOffset, keyword.length()));
-                    }
+                    proposals.add(new CompletionProposal(keyword, identOffset, offset - identOffset, keyword.length()));
                 }
             }
         }
+        
         return proposals;
     }
 
@@ -267,12 +327,17 @@ public class CompletionProcessor implements IContentAssistProcessor, ICompletion
     }
 
     @Override
-    public void assistSessionStarted(ContentAssistEvent event) {}
+    public void assistSessionStarted(ContentAssistEvent event) {
+        proposals.clear();
+    }
 
     @Override
-    public void assistSessionEnded(ContentAssistEvent event) {}
+    public void assistSessionEnded(ContentAssistEvent event) {
+    }
 
     @Override
-    public void selectionChanged(ICompletionProposal proposal, boolean smartToggle) {}
+    public void selectionChanged(ICompletionProposal proposal, boolean smartToggle) {
+        System.out.println("changed");
+    }
 
 }
