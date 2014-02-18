@@ -54,7 +54,7 @@ public class KotlinBasicCompletionTestCase extends KotlinEditorTestCase {
 	private String getText(String testPath) {
 		try {
 			File file = new File(testPath);
-			return String.valueOf(FileUtil.loadFileText(file));
+			return String.valueOf(FileUtil.loadFileText(file, null));
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
