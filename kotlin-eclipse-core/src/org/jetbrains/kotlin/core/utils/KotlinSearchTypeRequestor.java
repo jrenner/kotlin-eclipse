@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  *******************************************************************************/
-package org.jetbrains.kotlin.ui.editors.quickfix;
+package org.jetbrains.kotlin.core.utils;
 
 import java.util.List;
 
