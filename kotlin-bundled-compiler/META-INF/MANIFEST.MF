@@ -8,7 +8,8 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .,
  lib/kotlin-compiler.jar,
- lib/kotlin-runtime.jar
+ lib/kotlin-runtime.jar,
+ lib/InjectorGenerator.jar
 Export-Package: com.google.common.base,
  com.google.common.collect,
  com.intellij.codeInsight,
@@ -55,7 +56,6 @@ Export-Package: com.google.common.base,
  org.jetbrains.jet.codegen.signature,
  org.jetbrains.jet.codegen.state,
  org.jetbrains.jet.config,
- org.jetbrains.jet.di,
  org.jetbrains.jet.lang,
  org.jetbrains.jet.lang.cfg,
  org.jetbrains.jet.lang.cfg.pseudocode,
@@ -102,4 +102,5 @@ Export-Package: com.google.common.base,
  org.jetbrains.jet.util,
  org.jetbrains.jet.util.slicedmap,
  org.jetbrains.jet.utils,
- com.intellij.psi.compiled
+ com.intellij.psi.compiled,
+ org.jetbrains.jet.di
