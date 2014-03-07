@@ -10,7 +10,7 @@ import org.jetbrains.jet.lang.resolve.name.FqName;
 
 public class EclipseJavaPackage extends EclipseJavaElement<IJavaElement> implements JavaPackage {
 
-    protected EclipseJavaPackage(IJavaElement javaElement) {
+    public EclipseJavaPackage(IJavaElement javaElement) {
         super(javaElement);
     }
 
@@ -31,8 +31,7 @@ public class EclipseJavaPackage extends EclipseJavaElement<IJavaElement> impleme
     @Override
     @NotNull
     public FqName getFqName() {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException();
+        return new FqName(getEclipseElement().getElementName());
     }
 
 }

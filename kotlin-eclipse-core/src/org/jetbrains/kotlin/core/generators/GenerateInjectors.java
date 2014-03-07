@@ -28,7 +28,6 @@ import org.jetbrains.jet.lang.resolve.calls.CallResolver;
 import org.jetbrains.jet.lang.resolve.calls.CallResolverExtensionProvider;
 import org.jetbrains.jet.lang.resolve.java.JavaClassFinderImpl;
 import org.jetbrains.jet.lang.resolve.java.JavaDescriptorResolver;
-import org.jetbrains.jet.lang.resolve.java.mapping.JavaToKotlinClassMap;
 import org.jetbrains.jet.lang.resolve.java.resolver.PsiBasedExternalAnnotationResolver;
 import org.jetbrains.jet.lang.resolve.java.resolver.PsiBasedMethodSignatureChecker;
 import org.jetbrains.jet.lang.resolve.java.resolver.TraceBasedErrorReporter;
@@ -41,6 +40,7 @@ import org.jetbrains.jet.lang.types.DependencyClassByQualifiedNameResolverDummyI
 import org.jetbrains.jet.lang.types.expressions.ExpressionTypingServices;
 import org.jetbrains.jet.lang.types.lang.KotlinBuiltIns;
 import org.jetbrains.jet.storage.StorageManager;
+import org.jetbrains.kotlin.core.resolve.lang.java.EclipseJavaClassFinder;
 
 import com.intellij.openapi.project.Project;
 
@@ -65,9 +65,9 @@ public class GenerateInjectors {
 
     public static List<DependencyInjectorGenerator> createGenerators() throws IOException {
         return Arrays.asList(
-                generateInjectorForTopDownAnalyzerBasic(),
-                generateInjectorForTopDownAnalyzerForJvm(),
-                generateInjectorForJavaDescriptorResolver()
+                generateInjectorForTopDownAnalyzerForJvm()
+//                generateInjectorForTopDownAnalyzerBasic(),
+//                generateInjectorForJavaDescriptorResolver()
         );
     }
 
@@ -115,9 +115,7 @@ public class GenerateInjectors {
         generator.implementInterface(InjectorForTopDownAnalyzer.class);
         generateInjectorForTopDownAnalyzerCommon(generator);
         generator.addPublicField(JavaDescriptorResolver.class);
-        generator.addField(false, JavaToKotlinClassMap.class, null,
-                           new GivenExpression("org.jetbrains.jet.lang.resolve.java.mapping.JavaToKotlinClassMap.getInstance()"));
-        generator.addField(JavaClassFinderImpl.class);
+        generator.addField(EclipseJavaClassFinder.class);
         generator.addField(TraceBasedExternalSignatureResolver.class);
         generator.addField(TraceBasedJavaResolverCache.class);
         generator.addField(TraceBasedErrorReporter.class);
@@ -125,9 +123,9 @@ public class GenerateInjectors {
         generator.addField(PsiBasedExternalAnnotationResolver.class);
         generator.addField(MutablePackageFragmentProvider.class);
         generator.addField(false, VirtualFileFinder.class, "virtualFileFinder",
-                           new GivenExpression(
-                                   VirtualFileFinder.class.getName() + ".SERVICE.getInstance(project)"));
-        generator.configure("src", "org.jetbrains.kotlin.core.injectors", "InjectorForTopDownAnalyzerForJvm",
+                new GivenExpression(
+                        VirtualFileFinder.class.getName() + ".SERVICE.getInstance(project)"));
+        generator.configure("src", "org.jetbrains.kotlin.core.injectors", "TestEclipseInjectorForTopDownAnalyzerForJvm",
                            GenerateInjectors.class.getCanonicalName());
         return generator;
     }
@@ -161,6 +159,12 @@ public class GenerateInjectors {
 
     private static DependencyInjectorGenerator generateInjectorForTopDownAnalyzerCommon(DependencyInjectorGenerator generator) {
         // Fields
+//        generator.addParameter(Project.class);
+//        generator.addParameter(GlobalContext.class, true);
+//        generator.addParameter(BindingTrace.class);
+//        generator.addPublicParameter(ModuleDescriptorImpl.class);
+//        generator.addPublicField(TopDownAnalyzer.class);
+//        generator.addField(MutablePackageFragmentProvider.class);
         generator.addPublicField(TopDownAnalyzer.class);
         generator.addPublicField(TopDownAnalysisContext.class);
         generator.addPublicField(BodyResolver.class);

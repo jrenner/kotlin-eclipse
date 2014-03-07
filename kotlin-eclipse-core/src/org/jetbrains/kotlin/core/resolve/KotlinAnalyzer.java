@@ -28,7 +28,6 @@ import org.jetbrains.jet.analyzer.AnalyzeExhaust;
 import org.jetbrains.jet.lang.psi.JetFile;
 import org.jetbrains.jet.lang.resolve.AnalyzerScriptParameter;
 import org.jetbrains.jet.lang.resolve.BindingContext;
-import org.jetbrains.jet.lang.resolve.java.AnalyzerFacadeForJVM;
 import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
 import org.jetbrains.kotlin.core.utils.KotlinEnvironment;
 
@@ -56,7 +55,7 @@ public class KotlinAnalyzer {
         Project ideaProject = kotlinEnvironment.getProject();
         
         List<JetFile> sourceFiles = getSourceFiles(javaProject.getProject());
-        AnalyzeExhaust analyzeExhaust = AnalyzerFacadeForJVM.analyzeFilesWithJavaIntegration(
+        AnalyzeExhaust analyzeExhaust = EclipseAnalyzerFacadeForJVM.analyzeFilesWithJavaIntegration(
                 ideaProject, sourceFiles, Collections.<AnalyzerScriptParameter>emptyList(), filesToAnalyzeCompletely);
         
         return analyzeExhaust.getBindingContext();
