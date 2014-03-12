@@ -53,11 +53,11 @@ public class EclipseJavaClassFinder implements JavaClassFinder {
         
         JavaClass javaClass = new EclipseJavaClass(searchCollector.get(0));
         
-        FqName javaFQName = javaClass.getFqName();
-        assert javaFQName != null;
-        if (!(fqName.equals(javaFQName) || javaFQName.asString().endsWith(fqName.asString()))) {
-            throw new IllegalStateException("Requested " + fqName + ", got " + javaClass.getFqName());
-        }
+//        FqName javaFQName = javaClass.getFqName();
+//        assert javaFQName != null;
+//        if (!(fqName.equals(javaFQName) || javaFQName.asString().endsWith(fqName.asString()))) {
+//            throw new IllegalStateException("Requested " + fqName + ", got " + javaClass.getFqName());
+//        }
         
         return javaClass;
     }
