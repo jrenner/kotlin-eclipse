@@ -45,6 +45,12 @@ public class KotlinAnalyzer {
     }
     
     @NotNull
+    public static BindingContext analyzeProjectWithoutBodies(@NotNull IJavaProject javaProject) {
+        KotlinEnvironment kotlinEnvironment = KotlinEnvironment.getEnvironment(javaProject);
+        return analyzeProject(javaProject, kotlinEnvironment, Predicates.<PsiFile>alwaysFalse());
+    }
+    
+    @NotNull
     public static BindingContext analyzeOnlyOneFileCompletely(@NotNull IJavaProject javaProject, @NotNull PsiFile psiFile) {
         KotlinEnvironment kotlinEnvironment = KotlinEnvironment.getEnvironment(javaProject);
         return analyzeProject(javaProject, kotlinEnvironment, Predicates.equalTo(psiFile));

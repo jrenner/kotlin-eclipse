@@ -35,6 +35,7 @@ import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.ILaunchConfiguration;
 import org.eclipse.debug.core.IStatusHandler;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jdt.launching.JavaLaunchDelegate;
 import org.jetbrains.annotations.NotNull;
@@ -42,10 +43,12 @@ import org.jetbrains.jet.cli.common.messages.CompilerMessageLocation;
 import org.jetbrains.jet.cli.common.messages.CompilerMessageSeverity;
 import org.jetbrains.jet.cli.common.messages.MessageCollector;
 import org.jetbrains.jet.cli.jvm.K2JVMCompiler;
+import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.name.FqName;
 import org.jetbrains.kotlin.core.Activator;
 import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
 import org.jetbrains.kotlin.core.log.KotlinLogger;
+import org.jetbrains.kotlin.core.resolve.KotlinAnalyzer;
 import org.jetbrains.kotlin.core.utils.ProjectUtils;
 import org.osgi.framework.Bundle;
 
@@ -130,8 +133,11 @@ public class LaunchConfigurationDelegate extends JavaLaunchDelegate {
             assert mainTypeName != null;
             
             FqName mainClassName = new FqName(mainTypeName);
-            for (IFile file : KotlinPsiManager.INSTANCE.getFilesByProject(projectName)) {
-                if (ProjectUtils.hasMain(file) && ProjectUtils.createPackageClassName(file).equalsTo(mainClassName)) {
+            List<IFile> files = KotlinPsiManager.INSTANCE.getFilesByProject(projectName);
+            IJavaProject javaProject = JavaCore.create(files.get(0).getProject());
+            BindingContext bindingContext = KotlinAnalyzer.analyzeProjectWithoutBodies(javaProject);
+            for (IFile file : files) {
+                if (ProjectUtils.hasMain(file, bindingContext) && ProjectUtils.createPackageClassName(file).equalsTo(mainClassName)) {
                     return mainClassName;
                 }
             }

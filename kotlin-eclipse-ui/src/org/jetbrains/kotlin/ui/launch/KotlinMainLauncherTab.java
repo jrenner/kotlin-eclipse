@@ -17,17 +17,20 @@
 package org.jetbrains.kotlin.ui.launch;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.debug.ui.ILaunchConfigurationTab;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.debug.ui.launchConfigurations.JavaMainTab;
 import org.eclipse.jdt.internal.ui.viewsupport.JavaUILabelProvider;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.window.Window;
 import org.eclipse.ui.dialogs.ListDialog;
+import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
+import org.jetbrains.kotlin.core.resolve.KotlinAnalyzer;
 import org.jetbrains.kotlin.core.utils.ProjectUtils;
 
 public class KotlinMainLauncherTab extends JavaMainTab implements ILaunchConfigurationTab {
@@ -41,12 +44,15 @@ public class KotlinMainLauncherTab extends JavaMainTab implements ILaunchConfigu
         dialog.setContentProvider(new ArrayContentProvider());
         dialog.setLabelProvider(new JavaUILabelProvider());
 
-        Collection<IFile> projectFiles = null;
+        List<IFile> projectFiles = null;
         projectFiles = KotlinPsiManager.INSTANCE.getFilesByProject(fProjText.getText());
+
+        IJavaProject javaProject = JavaCore.create(projectFiles.get(0).getProject());
+        BindingContext bindingContext = KotlinAnalyzer.analyzeProjectWithoutBodies(javaProject);
         
         List<IFile> mainFiles = new ArrayList<IFile>();
         for (IFile file : projectFiles) {
-            if (ProjectUtils.hasMain(file)) {
+            if (ProjectUtils.hasMain(file, bindingContext)) {
                 mainFiles.add(file);
             }
         }

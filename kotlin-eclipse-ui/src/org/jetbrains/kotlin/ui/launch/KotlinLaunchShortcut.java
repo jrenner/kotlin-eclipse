@@ -31,6 +31,8 @@ import org.eclipse.debug.core.ILaunchConfigurationType;
 import org.eclipse.debug.core.ILaunchConfigurationWorkingCopy;
 import org.eclipse.debug.ui.DebugUITools;
 import org.eclipse.debug.ui.ILaunchShortcut;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.launching.IJavaLaunchConfigurationConstants;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -38,9 +40,11 @@ import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
 import org.eclipse.ui.IFileEditorInput;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.plugin.JetFileType;
 import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
 import org.jetbrains.kotlin.core.log.KotlinLogger;
+import org.jetbrains.kotlin.core.resolve.KotlinAnalyzer;
 import org.jetbrains.kotlin.core.utils.ProjectUtils;
 import org.jetbrains.kotlin.ui.editors.KotlinEditor;
 
@@ -63,8 +67,10 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
                 addFiles(files, resource);
             }
         }
-        
-        IFile mainClass = ProjectUtils.getMainClass(files);
+
+        IJavaProject javaProject = JavaCore.create(files.get(0).getProject());
+        BindingContext bindingContext = KotlinAnalyzer.analyzeProjectWithoutBodies(javaProject);
+        IFile mainClass = ProjectUtils.getMainClass(files, bindingContext);
         
         if (mainClass == null) {
             launchProject(files.get(0).getProject(), mode);
@@ -85,7 +91,9 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
             
             IFile file = ((IFileEditorInput) editorInput).getFile();
             
-            if (ProjectUtils.hasMain(file)) {
+            IJavaProject javaProject = JavaCore.create(file.getProject());
+            BindingContext bindingContext = KotlinAnalyzer.analyzeProjectWithoutBodies(javaProject);
+            if (ProjectUtils.hasMain(file, bindingContext)) {
                 launchWithMainClass(file, mode);
                 
                 return;
@@ -96,7 +104,10 @@ public class KotlinLaunchShortcut implements ILaunchShortcut {
     }
     
     private void launchProject(IProject project, String mode) {
-        IFile mainClass = ProjectUtils.getMainClass(KotlinPsiManager.INSTANCE.getFilesByProject(project));
+        IJavaProject javaProject = JavaCore.create(project);
+        BindingContext bindingContext = KotlinAnalyzer.analyzeProjectWithoutBodies(javaProject);
+        
+        IFile mainClass = ProjectUtils.getMainClass(KotlinPsiManager.INSTANCE.getFilesByProject(project), bindingContext);
         if (mainClass != null) {
             launchWithMainClass(mainClass, mode);
         }

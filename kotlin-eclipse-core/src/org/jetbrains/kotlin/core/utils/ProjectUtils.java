@@ -18,8 +18,8 @@ package org.jetbrains.kotlin.core.utils;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import org.eclipse.core.resources.IFile;
@@ -33,17 +33,20 @@ import org.eclipse.jdt.core.JavaModelException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.jet.lang.psi.JetFile;
+import org.jetbrains.jet.lang.resolve.BindingContext;
 import org.jetbrains.jet.lang.resolve.java.PackageClassUtils;
 import org.jetbrains.jet.lang.resolve.name.FqName;
-import org.jetbrains.jet.plugin.JetMainDetector;
+import org.jetbrains.jet.plugin.MainFunctionDetector;
 import org.jetbrains.kotlin.core.builder.KotlinPsiManager;
 
 public class ProjectUtils {
     
-    public static IFile getMainClass(Collection<IFile> files) {
+    @Nullable
+    public static IFile getMainClass(@NotNull Collection<IFile> files, @NotNull BindingContext bindingContext) {
+        MainFunctionDetector mainFunctionDetector = new MainFunctionDetector(bindingContext);
         for (IFile file : files) {
             JetFile jetFile = (JetFile) KotlinPsiManager.INSTANCE.getParsedFile(file);
-            if (JetMainDetector.hasMain(jetFile.getDeclarations())) {
+            if (mainFunctionDetector.hasMain(jetFile.getDeclarations())) {
                 return file;
             }
         }
@@ -61,8 +64,8 @@ public class ProjectUtils {
         return javaProject;
     }
     
-    public static boolean hasMain(IFile file) {
-        return getMainClass(Arrays.asList(file)) != null;
+    public static boolean hasMain(@NotNull IFile file, @NotNull BindingContext bindingContext) {
+        return getMainClass(Collections.singleton(file), bindingContext) != null;
     }
     
     @Nullable
