@@ -1,74 +1,98 @@
 package org.jetbrains.kotlin.core.generators;
 
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+import org.jetbrains.jet.context.GlobalContext;
+import org.jetbrains.jet.di.DependencyInjectorGenerator;
+import org.jetbrains.jet.di.DiType;
+import org.jetbrains.jet.di.GivenExpression;
+import org.jetbrains.jet.di.InjectorForTopDownAnalyzer;
+import org.jetbrains.jet.di.InjectorGeneratorUtil;
+import org.jetbrains.jet.lang.descriptors.ModuleDescriptorImpl;
+import org.jetbrains.jet.lang.resolve.BindingTrace;
+import org.jetbrains.jet.lang.resolve.MutablePackageFragmentProvider;
+import org.jetbrains.jet.lang.resolve.TopDownAnalyzer;
+import org.jetbrains.jet.lang.resolve.java.resolver.PsiBasedExternalAnnotationResolver;
+import org.jetbrains.jet.lang.resolve.java.resolver.PsiBasedMethodSignatureChecker;
+import org.jetbrains.jet.lang.resolve.java.resolver.TraceBasedErrorReporter;
+import org.jetbrains.jet.lang.resolve.java.resolver.TraceBasedExternalSignatureResolver;
+import org.jetbrains.jet.lang.resolve.java.resolver.TraceBasedJavaResolverCache;
+import org.jetbrains.jet.lang.resolve.kotlin.VirtualFileFinder;
+import org.jetbrains.kotlin.core.resolve.lang.java.EclipseJavaClassFinder;
+
+import com.intellij.openapi.project.Project;
+
 
 // NOTE: After making changes, you need to re-generate the injectors.
 //       To do that, you can run main in this class.
 public class GenerateInjectors {
+    public static void main(String[] args) throws Throwable {
+        for (DependencyInjectorGenerator generator : createGenerators()) {
+            try {
+                generator.generate();
+            }
+            catch (Throwable e) {
+                System.err.println(generator.getOutputFile());
+                throw e;
+            }
+        }
+    }
+    
+    public static List<DependencyInjectorGenerator> createGenerators() throws IOException {
+        return Arrays.asList(
+                generateInjectorForTopDownAnalyzerForJvm()
+//                generateInjectorForTopDownAnalyzerBasic(),
+//                generateInjectorForJavaDescriptorResolver()
+                );
+    }
+    
+    private static String defaultName(Class<?> entityType) {
+        return InjectorGeneratorUtil.var(new DiType(entityType));
+    }
+    
+    private static DependencyInjectorGenerator generateInjectorForTopDownAnalyzerForJvm() {
+        DependencyInjectorGenerator generator = new DependencyInjectorGenerator();
+        addFields(generator, Arrays.asList(
+                EclipseJavaClassFinder.class, 
+                TraceBasedExternalSignatureResolver.class,
+                TraceBasedJavaResolverCache.class,
+                TraceBasedErrorReporter.class,
+                PsiBasedMethodSignatureChecker.class,
+                PsiBasedExternalAnnotationResolver.class,
+                MutablePackageFragmentProvider.class));
+        
+        generator.implementInterface(InjectorForTopDownAnalyzer.class);
+        
+        generator.addParameter(false, new DiType(Project.class), defaultName(Project.class), true, false);
+        generator.addParameter(false, new DiType(GlobalContext.class), defaultName(GlobalContext.class), true, true);
+        generator.addParameter(false, new DiType(BindingTrace.class), defaultName(BindingTrace.class), true, false);
+        generator.addParameter(false, new DiType(ModuleDescriptorImpl.class), defaultName(ModuleDescriptorImpl.class), true, true);
+        
+        generator.addField(true, new DiType(TopDownAnalyzer.class), defaultName(TopDownAnalyzer.class), null, false);
+        
+        generator.addField(false, new DiType(MutablePackageFragmentProvider.class), 
+                defaultName(MutablePackageFragmentProvider.class), null, false);
+        
+        
+        generator.addField(false, new DiType(VirtualFileFinder.class), defaultName(VirtualFileFinder.class),
+                new GivenExpression(VirtualFileFinder.class.getName() + ".SERVICE.getInstance(project)"), false);
+        
+        generator.configure("src", "org.jetbrains.kotlin.core.injectors", "TestEclipseInjectorForTopDownAnalyzerForJvm",
+              GenerateInjectors.class.getCanonicalName());
+        
+        return generator;
+    }
+    
+    private static DependencyInjectorGenerator addFields(DependencyInjectorGenerator generator, List<Class<?>> types) {
+        for (Class<?> type : types) {
+            generator.addField(false, new DiType(type), defaultName(type), null, false);
+        }
+        
+        return generator;
+    }
 }
-//public class GenerateInjectors {
-//
-//    private GenerateInjectors() {
-//    }
-//
-//    public static void main(String[] args) throws Throwable {
-//        for (DependencyInjectorGenerator generator : createGenerators()) {
-//            try {
-//                generator.generate();
-//            }
-//            catch (Throwable e) {
-//                System.err.println(generator.getOutputFile());
-//                throw e;
-//            }
-//        }
-//    }
-//
-//    public static List<DependencyInjectorGenerator> createGenerators() throws IOException {
-//        return Arrays.asList(
-//                generateInjectorForTopDownAnalyzerForJvm()
-////                generateInjectorForTopDownAnalyzerBasic(),
-////                generateInjectorForJavaDescriptorResolver()
-//        );
-//    }
-//
-//    private static DependencyInjectorGenerator generateInjectorForLazyResolve() throws IOException {
-//        DependencyInjectorGenerator generator = new DependencyInjectorGenerator();
-//
-//        generator.addParameter(Project.class);
-//        generator.addParameter(GlobalContextImpl.class);
-//        generator.addParameter(ModuleDescriptorImpl.class);
-//        generator.addParameter(DeclarationProviderFactory.class);
-//        generator.addParameter(BindingTrace.class);
-//
-//        generator.addPublicField(ResolveSession.class);
-//
-//        generator.addField(CallResolverExtensionProvider.class);
-//        generator.addField(false, StorageManager.class, null, new GivenExpression("resolveSession.getStorageManager()"));
-//        generator.addField(false, PlatformToKotlinClassMap.class, null, new GivenExpression("moduleDescriptor.getPlatformToKotlinClassMap()"));
-//
-//        generator.configure("src", "org.jetbrains.kotlin.core.injectors", "InjectorForLazyResolve", GenerateInjectors.class.getCanonicalName());
-//        return generator;
-//    }
-//
-//    private static DependencyInjectorGenerator generateInjectorForTopDownAnalyzerBasic() throws IOException {
-//        DependencyInjectorGenerator generator = new DependencyInjectorGenerator();
-//        generateInjectorForTopDownAnalyzerCommon(generator);
-//        generator.addField(DependencyClassByQualifiedNameResolverDummyImpl.class);
-//        generator.addField(MutablePackageFragmentProvider.class);
-//        generator.addParameter(PlatformToKotlinClassMap.class);
-//        generator.configure("src", "org.jetbrains.kotlin.core.injectors", "InjectorForTopDownAnalyzerBasic", GenerateInjectors.class.getCanonicalName());
-//        return generator;
-//    }
-//
-//    private static DependencyInjectorGenerator generateInjectorForTopDownAnalyzerForJs() throws IOException {
-//        DependencyInjectorGenerator generator = new DependencyInjectorGenerator();
-//        generateInjectorForTopDownAnalyzerCommon(generator);
-//        generator.addField(DependencyClassByQualifiedNameResolverDummyImpl.class);
-//        generator.addField(MutablePackageFragmentProvider.class);
-//        generator.addField(false, PlatformToKotlinClassMap.class, null, new GivenExpression("org.jetbrains.jet.lang.PlatformToKotlinClassMap.EMPTY"));
-//        generator.configure("js/js.translator/src", "org.jetbrains.jet.di", "InjectorForTopDownAnalyzerForJs", GenerateInjectors.class.getCanonicalName());
-//        return generator;
-//    }
-//
 //    private static DependencyInjectorGenerator generateInjectorForTopDownAnalyzerForJvm() throws IOException {
 //        DependencyInjectorGenerator generator = new DependencyInjectorGenerator();
 //        generator.implementInterface(InjectorForTopDownAnalyzer.class);
