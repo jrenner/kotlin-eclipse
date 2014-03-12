@@ -53,7 +53,7 @@ public class AnalyzerScheduler extends Job {
 
     @Override
     protected IStatus run(IProgressMonitor monitor) {
-        bindingContext = KotlinAnalyzer.analyzeProject(javaProject);
+        bindingContext = KotlinAnalyzer.analyzeProjectWithoutBodies(javaProject);
         
         return Status.OK_STATUS;
     }
